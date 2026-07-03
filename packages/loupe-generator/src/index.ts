@@ -316,5 +316,7 @@ export async function generate(
 // Re-export small utilities consumers occasionally want alongside generate().
 export { safeUrl };
 export { serveCapture } from "./capture.js";
+export { themeFromDesign, themeFromDesignDir, parseFrontmatter } from "./design-theme.js";
 export type { Config, Selections };
 export type { CaptureOptions, CaptureServer, CapturedBrief } from "./capture.js";
+export type { ResolvedTheme } from "./design-theme.js";

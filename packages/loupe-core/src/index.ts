@@ -321,6 +321,8 @@ export const DEFAULT_TOKENS: TThemeTokens = {
 const SAFE_TOKEN_KEY = /^[a-zA-Z0-9-]+$/;
 /** Chars that could break out of a `<style>` / `:root {}` block or open a new rule. */
 export const UNSAFE_TOKEN_VALUE = /[<>{}\\;@]/;
+/** CSS functions that fetch or execute external resources — never valid in a token. */
+export const UNSAFE_TOKEN_FUNC = /\b(url|image|image-set|-webkit-image-set|cross-fade|element|expression)\s*\(/i;
 
 /**
  * Resolve the theme to `--loupe-*` CSS variables (overrides merged over the
@@ -336,7 +338,11 @@ export function tokensToCssVars(tokens?: TThemeTokens): Record<string, string> {
     if (!SAFE_TOKEN_KEY.test(k)) continue;
     const override = tokens?.[k];
     const safeOverride =
-      typeof override === "string" && !UNSAFE_TOKEN_VALUE.test(override) ? override : undefined;
+      typeof override === "string" &&
+      !UNSAFE_TOKEN_VALUE.test(override) &&
+      !UNSAFE_TOKEN_FUNC.test(override)
+        ? override
+        : undefined;
     const val = safeOverride ?? DEFAULT_TOKENS[k];
     if (typeof val === "string") out[`--loupe-${k}`] = val;
   }
