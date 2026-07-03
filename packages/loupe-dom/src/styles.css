@@ -1,0 +1,1322 @@
+/* @lucentive-labs/loupe-dom — part styles + default theme.
+ * All colors / spacing / type read from --loupe-* CSS variables so any brand
+ * can be applied via applyTheme() or a :root override. The default theme below
+ * is generated from loupe-core DEFAULT_TOKENS; applyTheme() / renderToString
+ * may override these per-instance.
+ */
+
+:root {
+  --loupe-color-bg: oklch(98.5% 0.003 255);
+  --loupe-color-surface: oklch(99.4% 0.002 255);
+  --loupe-color-fg: oklch(22% 0.014 260);
+  --loupe-color-fg-muted: oklch(52% 0.014 260);
+  --loupe-color-primary: oklch(22% 0.014 260);
+  --loupe-color-primary-fg: oklch(99% 0.003 255);
+  --loupe-color-border: oklch(90% 0.006 255);
+  --loupe-color-ring: oklch(70% 0.10 258);
+  --loupe-color-danger: oklch(55% 0.16 25);
+  --loupe-color-signal: oklch(80% 0.10 258);
+  --loupe-radius-sm: 8px;
+  --loupe-radius-md: 14px;
+  --loupe-radius-lg: 20px;
+  --loupe-space-1: 0.25rem;
+  --loupe-space-2: 0.5rem;
+  --loupe-space-3: 0.75rem;
+  --loupe-space-4: 1rem;
+  --loupe-space-5: 1.5rem;
+  --loupe-space-6: 2.5rem;
+  --loupe-font-sans: Manrope, ui-sans-serif, system-ui, sans-serif;
+  --loupe-font-serif: Georgia, "Times New Roman", serif;
+  --loupe-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --loupe-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --loupe-duration-slow: 5000ms;
+  --loupe-shadow-md: 0 12px 30px -18px rgba(16, 24, 32, 0.5);
+}
+
+.loupe,
+.loupe * {
+  box-sizing: border-box;
+}
+
+.loupe {
+  font-family: var(--loupe-font-sans);
+  color: var(--loupe-color-fg);
+  background: var(--loupe-color-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+}
+
+.loupe h1,
+.loupe h2,
+.loupe h3,
+.loupe h4,
+.loupe p {
+  margin: 0;
+}
+
+.loupe button,
+.loupe textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------------- Header ---------------- */
+.loupe-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--loupe-color-bg) 84%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border-bottom: 1px solid color-mix(in srgb, var(--loupe-color-border) 70%, transparent);
+}
+.loupe-header__inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+}
+.loupe-header__title {
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+.loupe-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem 0.45rem 0.5rem;
+  border-radius: 999px;
+  background: var(--loupe-color-primary);
+  color: var(--loupe-color-primary-fg);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.loupe-pill b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--loupe-color-signal);
+  color: var(--loupe-color-primary);
+  font-weight: 800;
+}
+
+/* ---------------- Layout ---------------- */
+.loupe-main {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+}
+.loupe-lab {
+  padding: clamp(1.5rem, 4vw, 3rem) 0;
+}
+.loupe-lab__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 384px);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  align-items: start;
+}
+.loupe-groups {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  min-width: 0;
+}
+
+/* ---------------- Group + tiles ---------------- */
+.loupe-group {
+  scroll-margin-top: 84px;
+}
+.loupe-group__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+.loupe-group__n {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--loupe-color-fg) 55%, var(--loupe-color-signal));
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+.loupe-group__titles {
+  flex: 1;
+  min-width: 0;
+}
+.loupe-group__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.loupe-group__prompt {
+  color: var(--loupe-color-fg-muted);
+  font-size: 0.9rem;
+  margin-top: 0.1rem;
+}
+.loupe-group__clear {
+  flex: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--loupe-color-border);
+  background: transparent;
+  color: var(--loupe-color-fg-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.loupe-group__clear:hover {
+  border-color: var(--loupe-color-fg-muted);
+  color: var(--loupe-color-fg);
+}
+
+.loupe-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.loupe-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid var(--loupe-color-border);
+  border-radius: var(--loupe-radius-md);
+  background: var(--loupe-color-surface);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 0.18s var(--loupe-ease-out),
+    border-color 0.18s var(--loupe-ease-out),
+    box-shadow 0.18s var(--loupe-ease-out);
+}
+.loupe-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--loupe-shadow-md);
+  border-color: color-mix(in srgb, var(--loupe-color-signal) 50%, var(--loupe-color-border));
+}
+.loupe-tile:focus-visible {
+  outline: none;
+  border-color: var(--loupe-color-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--loupe-color-ring) 55%, transparent);
+}
+.loupe-tile[aria-checked="true"] {
+  border-color: var(--loupe-color-primary);
+  box-shadow: 0 0 0 2px var(--loupe-color-primary);
+}
+.loupe-tile__media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--loupe-color-border) 40%, var(--loupe-color-surface));
+}
+.loupe-tile__cap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--loupe-color-fg);
+  line-height: 1.25;
+}
+.loupe-tile__label {
+  min-width: 0;
+}
+.loupe-tile__caption {
+  padding: 0 0.7rem 0.6rem;
+  font-size: 0.74rem;
+  color: var(--loupe-color-fg-muted);
+  line-height: 1.3;
+}
+.loupe-tile__check {
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--loupe-color-border);
+  display: grid;
+  place-items: center;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.loupe-tile[aria-checked="true"] .loupe-tile__check {
+  background: var(--loupe-color-primary);
+  border-color: var(--loupe-color-primary);
+}
+.loupe-tile__check svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  stroke: var(--loupe-color-primary-fg);
+  opacity: 0;
+}
+.loupe-tile[aria-checked="true"] .loupe-tile__check svg {
+  opacity: 1;
+}
+.loupe-tile__badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 3;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--loupe-color-surface) 90%, transparent);
+  backdrop-filter: blur(6px);
+  color: color-mix(in srgb, var(--loupe-color-fg) 60%, var(--loupe-color-signal));
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* ---------------- Crop engine ---------------- */
+.loupe-crop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.loupe-crop__img {
+  position: absolute;
+  height: auto;
+  display: block;
+  max-width: none;
+}
+.loupe-crop__img--cover {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.loupe-crop__missing {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--loupe-color-border) 60%, transparent),
+    color-mix(in srgb, var(--loupe-color-border) 60%, transparent) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+/* ---------------- Palette specimen ---------------- */
+.loupe-pal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+.loupe-pal__crop {
+  position: relative;
+  overflow: hidden;
+}
+.loupe-pal__crop--blank {
+  background: color-mix(in srgb, var(--loupe-color-border) 30%, var(--loupe-color-surface));
+}
+.loupe-pal__row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  height: 34%;
+  min-height: 28px;
+}
+.loupe-pal--swatches {
+  display: block;
+}
+.loupe-pal__grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+.loupe-swatch {
+  display: block;
+}
+
+/* ---------------- Type specimen ---------------- */
+.loupe-type {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.9rem;
+  background: color-mix(in srgb, var(--loupe-color-surface) 92%, var(--loupe-color-bg));
+  color: var(--loupe-color-fg);
+}
+.loupe-type__kicker {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--loupe-color-fg) 55%, var(--loupe-color-signal));
+}
+.loupe-type__sample {
+  font-size: 1.1rem;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+/* ---------------- Motion specimens ---------------- */
+.loupe-motion {
+  position: absolute;
+  inset: 0;
+}
+.loupe-motion__a,
+.loupe-motion__b-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.loupe-motion--pan .loupe-motion__b-wrap {
+  opacity: 0;
+}
+.loupe-field-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--loupe-color-signal);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--loupe-color-signal) 70%, transparent);
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .loupe-motion--breathe .loupe-crop__img {
+    animation: loupe-breathe 6s ease-in-out infinite;
+    transform-origin: center;
+  }
+  .loupe-motion--pan .loupe-motion__a {
+    animation: loupe-panfade 7s ease-in-out infinite;
+  }
+  .loupe-motion--pan .loupe-motion__b-wrap {
+    animation: loupe-panfade 7s ease-in-out infinite;
+    animation-delay: -3.5s;
+  }
+  .loupe-field-dot {
+    animation: loupe-drift 9s ease-in-out infinite;
+  }
+  .loupe-field-dot:nth-child(2) {
+    animation-duration: 11s;
+    animation-delay: -3s;
+  }
+  .loupe-field-dot:nth-child(3) {
+    animation-duration: 8s;
+    animation-delay: -5s;
+  }
+  .loupe-field-dot:nth-child(4) {
+    animation-duration: 12s;
+    animation-delay: -1.5s;
+  }
+}
+@keyframes loupe-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+@keyframes loupe-panfade {
+  0%,
+  42% {
+    opacity: 1;
+  }
+  50%,
+  92% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes loupe-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(10px, -12px);
+  }
+  66% {
+    transform: translate(-8px, 8px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* ---------------- Layout mock specimens ---------------- */
+.loupe-mock {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--loupe-color-surface) 92%, var(--loupe-color-bg));
+}
+.loupe-mock__fill,
+.loupe-mock__band,
+.loupe-mock__half,
+.loupe-mock__third {
+  position: absolute;
+  overflow: hidden;
+}
+.loupe-mock--portrait .loupe-mock__fill {
+  inset: 0;
+}
+.loupe-mock--portrait .loupe-mock__copy {
+  position: absolute;
+  left: 8%;
+  right: 30%;
+  bottom: 9%;
+  display: grid;
+  gap: 5px;
+}
+.loupe-mock--threshold {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+}
+.loupe-mock--threshold .loupe-mock__half {
+  position: relative;
+}
+.loupe-mock--threshold .loupe-mock__sig {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-1px);
+  background: var(--loupe-color-signal);
+}
+.loupe-mock--sparse .loupe-mock__copy--top {
+  position: absolute;
+  left: 9%;
+  right: 24%;
+  top: 14%;
+  display: grid;
+  gap: 5px;
+}
+.loupe-mock--sparse .loupe-mock__band {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34%;
+}
+.loupe-mock--chapters {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  padding: 12%;
+}
+.loupe-mock__row {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.loupe-mock__row b {
+  color: color-mix(in srgb, var(--loupe-color-fg) 55%, var(--loupe-color-signal));
+  font-weight: 800;
+  font-size: 10px;
+}
+.loupe-mock--belowfold .loupe-mock__fill {
+  inset: 0;
+}
+.loupe-mock--belowfold .loupe-mock__strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--loupe-color-surface) 92%, transparent);
+  padding: 7px 9px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.loupe-mock--stack {
+  display: grid;
+  grid-template-rows: 1fr 1fr auto;
+}
+.loupe-mock--stack .loupe-mock__third {
+  position: relative;
+}
+.loupe-mock--stack .loupe-mock__copy {
+  padding: 6px 9px;
+}
+.loupe-mock__bar {
+  display: block;
+  height: 6px;
+  background: var(--loupe-color-fg);
+  opacity: 0.82;
+  border-radius: 2px;
+}
+.loupe-mock__bar--s {
+  opacity: 0.4;
+  height: 4px;
+}
+.loupe-mock__row .loupe-mock__bar {
+  flex: 1;
+  height: 4px;
+}
+.loupe-mock__sig {
+  background: var(--loupe-color-signal);
+  border-radius: 2px;
+}
+.loupe-mock__sig--dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* ---------------- Sticky stack ---------------- */
+.loupe-stack {
+  position: sticky;
+  top: 84px;
+  align-self: start;
+  border: 1px solid var(--loupe-color-border);
+  border-radius: var(--loupe-radius-lg);
+  background: var(--loupe-color-surface);
+  box-shadow: 0 24px 60px -42px rgba(16, 24, 32, 0.6);
+  overflow: hidden;
+}
+.loupe-stack__handle {
+  display: none;
+}
+
+/* Hand-off action: hidden unless the artifact is served by a capture server
+   (which adds .loupe-host--capture), so standalone artifacts show only Copy. */
+.loupe-btn.loupe-handoff {
+  display: none;
+}
+.loupe-host--capture .loupe-btn.loupe-handoff {
+  display: inline-flex;
+}
+.loupe-stack__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--loupe-color-border) 60%, transparent);
+}
+.loupe-stack__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.loupe-stack__sub {
+  font-size: 0.72rem;
+  color: var(--loupe-color-fg-muted);
+  font-weight: 500;
+}
+.loupe-stack__sub b {
+  color: var(--loupe-color-fg);
+}
+
+/* ---------------- Composed preview ---------------- */
+.loupe-pv {
+  padding: 0.9rem;
+}
+.loupe-pv__frame {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--loupe-color-bg);
+  color: var(--loupe-color-fg);
+  border: 1px solid color-mix(in srgb, var(--loupe-color-fg) 12%, transparent);
+  display: flex;
+  flex-direction: column;
+}
+.loupe-pv__heading {
+  padding: 0.75rem 0.9rem 0.6rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.loupe-pv__heading-k {
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--loupe-color-fg) 50%, var(--loupe-color-signal));
+}
+.loupe-pv__heading-h {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.loupe-pv__band {
+  position: relative;
+  overflow: hidden;
+}
+.loupe-pv__band--feature {
+  aspect-ratio: 16 / 11;
+}
+.loupe-pv__band--band {
+  aspect-ratio: 16 / 7;
+}
+.loupe-pv__band--systems {
+  min-height: 40px;
+}
+.loupe-pv__media {
+  position: absolute;
+  inset: 0;
+}
+.loupe-pv__mock {
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+.loupe-pv__tag {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.45rem;
+  z-index: 2;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--loupe-color-bg) 86%, transparent);
+  backdrop-filter: blur(6px);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--loupe-color-fg) 75%, transparent);
+}
+.loupe-pv__band--empty {
+  min-height: 38px;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--loupe-color-border) 50%, transparent),
+    color-mix(in srgb, var(--loupe-color-border) 50%, transparent) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+.loupe-pv__band--empty .loupe-pv__tag {
+  position: static;
+  display: inline-block;
+  margin: 0.4rem 0 0.4rem 0.6rem;
+}
+.loupe-pv__swatches {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  height: 34px;
+}
+.loupe-pv__swatches .loupe-swatch {
+  height: 100%;
+}
+.loupe-pv__headline {
+  display: block;
+  padding: 0.7rem 0.9rem 1.4rem;
+  font-size: 1rem;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.loupe-pv__empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 5;
+  color: var(--loupe-color-fg-muted);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--loupe-color-border) 60%, transparent);
+  border-radius: 12px;
+}
+
+/* ---------------- Thumbnails ---------------- */
+.loupe-stack__thumbs {
+  padding: 0 0.9rem 0.6rem;
+}
+.loupe-stack__thumbs-title {
+  margin: 0.2rem 0 0.5rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--loupe-color-fg-muted);
+  font-weight: 700;
+}
+.loupe-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 4px;
+}
+.loupe-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--loupe-color-border);
+  background-color: var(--loupe-color-surface);
+  cursor: pointer;
+  padding: 0;
+}
+.loupe-thumb--empty {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--loupe-color-border) 60%, transparent),
+    color-mix(in srgb, var(--loupe-color-border) 60%, transparent) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+.loupe-thumb:hover {
+  border-color: var(--loupe-color-fg-muted);
+}
+.loupe-thumb__g {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.62rem;
+  color: color-mix(in srgb, var(--loupe-color-fg) 55%, var(--loupe-color-signal));
+}
+
+/* ---------------- Buttons ---------------- */
+.loupe-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.loupe-btn:active {
+  transform: translateY(1px);
+}
+.loupe-btn--primary {
+  background: var(--loupe-color-primary);
+  color: var(--loupe-color-primary-fg);
+}
+.loupe-btn--primary:hover {
+  background: color-mix(in srgb, var(--loupe-color-primary) 88%, black);
+}
+.loupe-btn--ghost {
+  background: transparent;
+  border-color: var(--loupe-color-border);
+  color: var(--loupe-color-fg-muted);
+}
+.loupe-btn--ghost:hover {
+  border-color: var(--loupe-color-fg-muted);
+  color: var(--loupe-color-fg);
+}
+.loupe-btn--signal {
+  background: var(--loupe-color-signal);
+  color: var(--loupe-color-primary);
+}
+.loupe-btn--signal:hover {
+  background: color-mix(in srgb, var(--loupe-color-signal) 86%, black);
+}
+.loupe-stack__foot {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem 0.95rem;
+  border-top: 1px solid color-mix(in srgb, var(--loupe-color-border) 60%, transparent);
+}
+.loupe-stack__foot .loupe-btn {
+  flex: 1;
+  padding: 0.5rem 0.6rem;
+}
+
+/* ---------------- Export brief ---------------- */
+.loupe-export {
+  padding: clamp(2rem, 5vw, 3.5rem) 0;
+  border-top: 1px solid var(--loupe-color-border);
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  align-items: start;
+}
+.loupe-export__title {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.loupe-export__lead {
+  margin-top: 0.8rem;
+  color: var(--loupe-color-fg-muted);
+  font-size: 1rem;
+}
+.loupe-export__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.1rem 0 0.5rem;
+}
+.loupe-export__status {
+  min-height: 1.3rem;
+  color: color-mix(in srgb, var(--loupe-color-fg) 50%, var(--loupe-color-signal));
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.loupe-export__brief {
+  width: 100%;
+  min-height: 460px;
+  resize: vertical;
+  border: 1px solid var(--loupe-color-border);
+  border-radius: var(--loupe-radius-md);
+  background: color-mix(in srgb, var(--loupe-color-surface) 92%, var(--loupe-color-bg));
+  color: var(--loupe-color-fg);
+  padding: 1.1rem;
+  line-height: 1.55;
+  font-size: 0.85rem;
+  font-family: var(--loupe-font-mono);
+}
+
+/* ---------------- Workflow + banned ---------------- */
+.loupe-workflow,
+.loupe-banned {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--loupe-color-border);
+  padding-top: clamp(1.25rem, 3vw, 2rem);
+  margin-top: clamp(0.5rem, 2vw, 1rem);
+}
+.loupe-workflow__title,
+.loupe-banned__title {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-bottom: 0.9rem;
+}
+.loupe-banned__title {
+  color: var(--loupe-color-danger);
+}
+.loupe-workflow__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+.loupe-workflow__item {
+  padding: 0.9rem 0 0.9rem 1.3rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--loupe-color-border) 70%, transparent);
+  position: relative;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+.loupe-workflow__item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--loupe-color-signal);
+}
+.loupe-banned__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.7rem;
+}
+.loupe-banned__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--loupe-color-danger) 24%, var(--loupe-color-border));
+  border-radius: var(--loupe-radius-sm);
+  background: color-mix(in srgb, var(--loupe-color-danger) 4%, var(--loupe-color-surface));
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--loupe-color-fg);
+}
+.loupe-banned__item span:first-child {
+  color: var(--loupe-color-danger);
+  font-weight: 800;
+}
+
+/* ---------------- Responsive: bottom sheet ---------------- */
+@media (max-width: 1080px) {
+  .loupe-lab__grid {
+    grid-template-columns: 1fr;
+  }
+  .loupe-export {
+    grid-template-columns: 1fr;
+  }
+  .loupe-banned__list {
+    grid-template-columns: 1fr;
+  }
+  .loupe-lab {
+    padding-bottom: 140px;
+  }
+  .loupe-stack {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 50;
+    border-radius: var(--loupe-radius-lg) var(--loupe-radius-lg) 0 0;
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(calc(100% - 116px));
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .loupe-stack--open {
+    transform: translateY(0);
+  }
+  .loupe-stack__handle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+  .loupe-stack__handle-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .loupe-stack__handle-count {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--loupe-color-fg-muted);
+  }
+  .loupe-stack__handle-count b {
+    color: var(--loupe-color-fg);
+  }
+  .loupe-stack__grip {
+    position: absolute;
+    top: 0.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2.4rem;
+    height: 0.28rem;
+    border-radius: 999px;
+    background: var(--loupe-color-border);
+  }
+  .loupe-stack__head {
+    display: none;
+  }
+  .loupe-stack__scroll {
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .loupe-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================ *
+ * Flow layout — guided, one-question-at-a-time stepper (default).
+ * Mobile-first: a single decision fills the screen; only the active
+ * step renders; nav sits within thumb reach at the bottom.
+ * ============================================================ */
+.loupe--flow {
+  /* App-shell: pin to the viewport so only the stage scrolls and the footer
+     never overlays content. position:fixed also sidesteps the artifact's
+     default body margin without a global body reset. */
+  position: fixed;
+  inset: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--loupe-color-bg);
+  color: var(--loupe-color-fg);
+}
+
+.loupe-flow__top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.8rem 1.1rem;
+  background: color-mix(in srgb, var(--loupe-color-bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--loupe-color-border);
+}
+.loupe-flow__brand {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+.loupe-flow__top .loupe-pill {
+  margin-left: auto;
+}
+
+.loupe-rail {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.loupe-railstep {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.4rem;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  line-height: 0;
+}
+.loupe-railstep__dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--loupe-color-border);
+  transition:
+    background 180ms var(--loupe-ease-out),
+    transform 180ms var(--loupe-ease-out);
+}
+.loupe-railstep.is-done .loupe-railstep__dot {
+  background: var(--loupe-color-signal);
+}
+.loupe-railstep.is-active .loupe-railstep__dot {
+  background: var(--loupe-color-primary);
+  transform: scale(1.55);
+}
+.loupe-railstep--review .loupe-railstep__dot {
+  width: 11px;
+  height: 11px;
+  box-shadow: 0 0 0 2px var(--loupe-color-border);
+}
+.loupe-railstep:focus-visible {
+  outline: 2px solid var(--loupe-color-ring);
+  outline-offset: 1px;
+}
+
+.loupe-flow__stage {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.1rem 2.5rem;
+}
+.loupe-step {
+  display: none;
+}
+.loupe-step.is-active {
+  display: block;
+  animation: loupe-step-in 300ms var(--loupe-ease-out) both;
+}
+@keyframes loupe-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loupe-step.is-active {
+    animation: none;
+  }
+}
+
+/* one enlarged, calm group per step */
+.loupe--flow .loupe-group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.loupe--flow .loupe-group__n {
+  display: none;
+}
+.loupe--flow .loupe-group__head {
+  margin-bottom: 1.4rem;
+}
+.loupe--flow .loupe-group__title {
+  font-size: 1.45rem;
+  letter-spacing: -0.015em;
+}
+.loupe--flow .loupe-group__prompt {
+  margin-top: 0.35rem;
+  font-size: 1rem;
+  color: var(--loupe-color-fg-muted);
+}
+.loupe--flow .loupe-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.loupe-flow__nav {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.1rem;
+  padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--loupe-color-bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--loupe-color-border);
+}
+.loupe-flow__counter {
+  margin-inline: auto;
+  font-size: 0.85rem;
+  color: var(--loupe-color-fg-muted);
+}
+
+/* review / hand-off step */
+.loupe-review__head {
+  margin-bottom: 1.4rem;
+}
+.loupe-review__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.015em;
+}
+.loupe-review__lead {
+  margin: 0;
+  color: var(--loupe-color-fg-muted);
+}
+.loupe-review__grid {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+.loupe--flow .loupe-export {
+  margin: 0;
+}
+@media (min-width: 60rem) {
+  .loupe-review__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ============================================================ *
+ * Decision specimens (strategic / non-visual) + locked groups.
+ * ============================================================ */
+.loupe-decision {
+  display: flex;
+  flex-direction: column;
+  gap: var(--loupe-space-2);
+  justify-content: flex-start;
+  height: 100%;
+  /* extra top padding clears the floating "Rec" badge and keeps summaries
+     aligned across sibling tiles whether or not they carry the badge */
+  padding: calc(var(--loupe-space-4) + 1.15rem) var(--loupe-space-4) var(--loupe-space-4);
+  background: var(--loupe-color-surface);
+  text-align: left;
+}
+.loupe-decision__summary {
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: var(--loupe-color-fg);
+}
+.loupe-decision__detail {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--loupe-color-fg-muted);
+}
+.loupe-decision__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--loupe-space-1);
+  margin-top: var(--loupe-space-1);
+}
+.loupe-decision__flag {
+  font-style: normal;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--loupe-color-border);
+  color: var(--loupe-color-fg-muted);
+  background: var(--loupe-color-bg);
+}
+
+/* Composed-preview band for decision picks. */
+.loupe-pv__band--decision {
+  display: flex;
+  flex-direction: column;
+  gap: var(--loupe-space-1);
+  /* bottom padding clears the absolutely-positioned band tag chip */
+  padding: var(--loupe-space-3) var(--loupe-space-4) 2.4rem;
+}
+.loupe-pv__decision {
+  font-weight: 650;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+/* Locked groups — decisions already taken, rendered read-only. */
+.loupe-group__lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--loupe-color-fg-muted);
+  white-space: nowrap;
+}
+.loupe-group__lock svg {
+  width: 14px;
+  height: 14px;
+}
+.loupe-group--locked .loupe-tile {
+  cursor: default;
+}
+.loupe-group--locked .loupe-tile[aria-checked="false"] {
+  opacity: 0.55;
+}
+.loupe-group--locked .loupe-tile:hover {
+  transform: none;
+}
+
+/* Decision tiles: media stretches so the radio/label caps align across
+   siblings regardless of text length. */
+.loupe-tile:has(.loupe-decision) {
+  display: flex;
+  flex-direction: column;
+}
+.loupe-tile:has(.loupe-decision) .loupe-tile__media {
+  flex: 1 1 auto;
+  aspect-ratio: auto;
+  min-height: 7.5rem;
+}
+
+/* A locked group with a single option reads as a deliberate statement card,
+   not an accidental orphan tile. */
+.loupe-group--locked .loupe-tile:only-child {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 640px;
+}

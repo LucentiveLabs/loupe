@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Loupe">
+  <title>Loupe</title>
+  <!-- Optical mark: the field of options (outer ring) narrows through the lens
+       (inner ring) to the one locked decision (bright focal core). -->
+  <circle cx="24" cy="24" r="16.5" stroke="#2FD4C4" stroke-width="3.25" />
+  <circle cx="24" cy="24" r="9" stroke="#2FD4C4" stroke-width="2.25" opacity="0.62" />
+  <circle cx="24" cy="24" r="3.75" fill="#2FD4C4" />
+</svg>

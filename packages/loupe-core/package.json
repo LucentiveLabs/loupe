@@ -1,0 +1,56 @@
+{
+  "name": "@lucentive-labs/loupe-core",
+  "version": "0.0.0",
+  "description": "Loupe headless core \u2014 zero runtime deps: SSR-safe store, deterministic derivations, crop math, and ARIA prop-getters.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://labs.lucentive.io/libraries/loupe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LucentiveLabs/loupe.git",
+    "directory": "packages/loupe-core"
+  },
+  "bugs": "https://github.com/LucentiveLabs/loupe/issues",
+  "keywords": [
+    "loupe",
+    "decision-lock",
+    "design-tokens",
+    "design-tooling",
+    "agent-native",
+    "headless",
+    "ssr-safe",
+    "store",
+    "export-brief",
+    "crop"
+  ],
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lucentive-labs/loupe-schema": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  }
+}

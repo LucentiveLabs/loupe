@@ -1,0 +1,21 @@
+{
+  "name": "@lucentive-labs/example-brand-starter",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Loupe example — an asset-free brand-system decision lab (palette/type/layout/motion) with a swapped brand theme.",
+  "type": "module",
+  "scripts": {
+    "generate": "tsx generate.ts",
+    "verify": "tsx verify.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lucentive-labs/loupe-core": "workspace:*",
+    "@lucentive-labs/loupe-dom": "workspace:*",
+    "@lucentive-labs/loupe-generator": "workspace:*",
+    "@lucentive-labs/loupe-schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
+  }
+}

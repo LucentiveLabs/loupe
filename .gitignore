@@ -1,0 +1,13 @@
+node_modules
+.next
+.vercel
+.superpowers
+*.log
+.env
+.env.*
+
+# build & test artifacts
+dist
+*.tgz
+*.tsbuildinfo
+coverage

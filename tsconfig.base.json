@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@lucentive-labs/loupe-schema": ["packages/loupe-schema/src/index.ts"],
+      "@lucentive-labs/loupe-core": ["packages/loupe-core/src/index.ts"],
+      "@lucentive-labs/loupe-dom": ["packages/loupe-dom/src/index.ts"],
+      "@lucentive-labs/loupe-generator": ["packages/loupe-generator/src/index.ts"],
+      "@lucentive-labs/loupe-react": ["packages/loupe-react/src/index.ts"]
+    }
+  }
+}

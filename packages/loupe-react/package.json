@@ -1,0 +1,61 @@
+{
+  "name": "@lucentive-labs/loupe-react",
+  "version": "0.0.0",
+  "description": "Loupe React 19 adapter \u2014 <Loupe/> + useLoupe(), a thin useSyncExternalStore view over loupe-core. SSR/hydration-safe.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://labs.lucentive.io/libraries/loupe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LucentiveLabs/loupe.git",
+    "directory": "packages/loupe-react"
+  },
+  "bugs": "https://github.com/LucentiveLabs/loupe/issues",
+  "keywords": [
+    "loupe",
+    "decision-lock",
+    "design-tokens",
+    "design-tooling",
+    "agent-native",
+    "react",
+    "react19",
+    "usesyncexternalstore",
+    "hooks",
+    "ssr"
+  ],
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "dependencies": {
+    "@lucentive-labs/loupe-core": "workspace:*",
+    "@lucentive-labs/loupe-schema": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  }
+}

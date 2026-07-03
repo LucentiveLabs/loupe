@@ -1,0 +1,48 @@
+{
+  "name": "loupe-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Loupe — open-source, config-driven, agent-native decision-lock. Monorepo root.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://labs.lucentive.io/libraries/loupe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LucentiveLabs/loupe.git"
+  },
+  "bugs": "https://github.com/LucentiveLabs/loupe/issues",
+  "author": "Lucentive Labs",
+  "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:packages": "pnpm -r --filter \"./packages/*\" build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "lint:publish": "pnpm build:packages && node scripts/check-publish.mjs",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build:packages && changeset publish"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.4",
+    "@changesets/cli": "2.31.0",
+    "@playwright/test": "1.61.1",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.28.1",
+    "publint": "0.3.21",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tsdown": "0.22.3",
+    "tsx": "4.22.4",
+    "typescript": "^5.9.3",
+    "vitest": "4.1.9"
+  }
+}
