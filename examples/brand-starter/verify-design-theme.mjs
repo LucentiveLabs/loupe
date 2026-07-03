@@ -91,6 +91,47 @@ async function main() {
   const empty = themeFromDesign({});
   ok("empty input warns", empty.warnings.some((w) => /no DESIGN\.md or design\.json/i.test(w)));
 
+  // Material-3-style names map too (tertiary=accent, on-surface=fg, neutral=bg).
+  const MATERIAL_MD = `---
+colors:
+  primary: "#3b5bdb"
+  tertiary: "#e8590c"
+  neutral: "#f5f6f7"
+  on-surface: "#161a1d"
+  outline: "#c9ced3"
+  error: "#c92a2a"
+typography:
+  body-md:
+    fontFamily: "Inter, system-ui, sans-serif"
+---
+`;
+  const mat = themeFromDesign({ designMd: MATERIAL_MD }).theme;
+  ok("Material: signal <- tertiary (not the structural primary)", mat["color-signal"] === "#e8590c", mat["color-signal"]);
+  ok("Material: fg <- on-surface", mat["color-fg"] === "#161a1d", mat["color-fg"]);
+  ok("Material: bg <- neutral", mat["color-bg"] === "#f5f6f7", mat["color-bg"]);
+  ok("Material: border <- outline", mat["color-border"] === "#c9ced3", mat["color-border"]);
+  ok("Material: danger <- error", mat["color-danger"] === "#c92a2a", mat["color-danger"]);
+  ok("Material: font-sans <- body-md", mat["font-sans"] === "Inter, system-ui, sans-serif", mat["font-sans"]);
+
+  // security: url() / breakout values in a color slot are dropped + warned.
+  const EVIL_MD = `---
+colors:
+  ink: "url(https://attacker.example/pixel.png)"
+  primary: "#13ece1"
+  mist: "red}body{display:none"
+---
+`;
+  const evil = themeFromDesign({ designMd: EVIL_MD });
+  ok("url() color value dropped", evil.theme["color-fg"] === undefined && evil.theme["color-primary"] === undefined);
+  ok("breakout color value dropped", evil.theme["color-bg"] === undefined);
+  ok("dropped values are warned", evil.warnings.some((w) => /not a valid color/i.test(w)));
+  const gen2 = await generate(config, { outDir: path.join(tmp, "evil"), assetsDir: here, theme: { "color-bg": "url(https://attacker.example/x.png)" } });
+  ok("core sink keeps url() out of the applied CSS", !/--loupe-color-bg:\s*url\(/i.test(gen2.html));
+
+  // parser: inline comment after a quoted hex is stripped, the hex preserved.
+  const cmt = themeFromDesign({ designMd: `---\ncolors:\n  ink: "#0f172a"  # deep ink, do not change\n---\n` }).theme;
+  ok("inline comment stripped, hex preserved", cmt["color-fg"] === "#0f172a", cmt["color-fg"]);
+
   fs.rmSync(tmp, { recursive: true, force: true });
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} design-theme assertions passed.`);
