@@ -77,6 +77,15 @@ Decide what is being chosen and gather the raw material.
   the semantic `--loupe-*` contract as kebab keys **without** the prefix
   (e.g. `color-primary`, `radius-md`, `font-sans`). See the brand-starter
   `theme` block for a real mapping.
+- **Auto-derive the theme (optional):** if the target project already has a
+  `DESIGN.md` (the open Google Stitch format) or an Impeccable
+  `.impeccable/design.json`, resolve a Loupe theme from it with
+  `themeFromDesignDir(projectDir)` (from `@lucentive-labs/loupe-generator`) and
+  pass `generate(config, { theme })` — the artifact then wears the project's own
+  skin instead of the neutral default. It maps the project's color/font/radius
+  tokens onto `--loupe-*` via a best-effort role map (accent ← the project's
+  `primary`, structural ink ← `ink`, etc.) and returns `warnings` for any role
+  it couldn't source.
 
 ### 2. Author `loupe.config.ts`
 
