@@ -45,6 +45,10 @@ crop, the actual type, the actual trade-off — and locks the one you choose.
   real board, a real type family at a real weight. Strategic options state the call and its
   trade-off `flags`, with one recommended pick; decisions already made ride along as read-only
   `locked` groups, so the full picture stays in view without being re-litigated.
+- **"Something else" is always an answer.** Every open group carries a free-text write-in
+  under its tiles, so the menu can never trap the decider in options that are all wrong. The
+  text flows into the export brief — as the group's decision itself, or as a note beside the
+  locked pick (`allowWriteIn: false` opts a group out).
 - **The contract, not a screenshot of one.** The export brief derives from the same
   selections that drive the preview, so they can never drift. Hand the brief to a build
   pass and it is exact.

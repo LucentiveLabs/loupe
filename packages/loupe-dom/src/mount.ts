@@ -84,10 +84,14 @@ export function mount(
 
   const render = () => {
     const sel = store.getSnapshot();
-    // Preserve focus across re-render by remembering the active tile address.
+    // Preserve focus across re-render by remembering the active tile address —
+    // or, for a write-in input, its group + caret (typing commits per input
+    // event, so the input is recreated mid-edit).
     const active = document.activeElement as HTMLElement | null;
     const focusGroup = active?.getAttribute("data-group");
     const focusOption = active?.getAttribute("data-option");
+    const focusWriteIn = active?.getAttribute("data-loupe-writein");
+    const caret = focusWriteIn ? (active as HTMLInputElement).selectionStart : null;
 
     el.innerHTML = renderApp(config, sel, { step });
 
@@ -97,6 +101,14 @@ export function mount(
         `[data-loupe-part="tile"][data-group="${cssEscape(focusGroup)}"][data-option="${cssEscape(focusOption)}"]`,
       );
       next?.focus();
+    } else if (focusWriteIn) {
+      const next = el.querySelector<HTMLInputElement>(
+        `[data-loupe-writein="${cssEscape(focusWriteIn)}"]`,
+      );
+      if (next) {
+        next.focus();
+        if (caret !== null) next.setSelectionRange(caret, caret);
+      }
     }
   };
 
@@ -235,6 +247,16 @@ export function mount(
     }
   };
 
+  // Write-in typing: every input event commits the raw value to the store,
+  // which re-renders (brief, preview, progress, rail) with focus/caret restored.
+  const onInput = (ev: Event) => {
+    const target = ev.target as HTMLElement | null;
+    const input = target?.closest<HTMLInputElement>("[data-loupe-writein]");
+    if (!input) return;
+    const g = input.getAttribute("data-loupe-writein");
+    if (g) store.writeIn(g, input.value);
+  };
+
   const onKeydown = (ev: KeyboardEvent) => {
     const target = ev.target as HTMLElement | null;
     const tile = target?.closest<HTMLElement>('[data-loupe-part="tile"]');
@@ -257,6 +279,7 @@ export function mount(
 
   el.addEventListener("click", onClick);
   el.addEventListener("keydown", onKeydown);
+  el.addEventListener("input", onInput);
 
   const unsubscribe = store.subscribe(render);
   render();
@@ -267,6 +290,7 @@ export function mount(
       unsubscribe();
       el.removeEventListener("click", onClick);
       el.removeEventListener("keydown", onKeydown);
+      el.removeEventListener("input", onInput);
       for (const t of timers) window.clearTimeout(t);
       timers.clear();
       el.innerHTML = "";

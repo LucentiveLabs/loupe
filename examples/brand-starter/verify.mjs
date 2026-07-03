@@ -8,6 +8,10 @@
  *   - clicking a tile flips aria-checked on it AND off its sibling, and updates
  *     the composed preview + export brief
  *   - per-group Clear, Reset (clear all), Recommended, and keyboard nav work
+ *   - the always-on write-in ("something else") renders on every open group,
+ *     typing flows into the brief + composed preview + progress, Clear drops
+ *     it, it persists across reload via storageKey, and nothing overflows at
+ *     either viewport
  * and captures desktop (1440×900) + mobile (390×844) screenshots.
  *
  * This config carries no image assets, so there are no crop <img> elements to
@@ -54,6 +58,10 @@ async function settle(page) {
       await withTimeout(document.fonts.ready, 1500);
     }
   });
+}
+
+async function overflow(page) {
+  return page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 }
 
 async function main() {
@@ -181,6 +189,89 @@ async function main() {
     await page.locator("[data-loupe-recommend]").first().click();
   }
 
+  // ---- Write-in ("something else"): always on for open groups ----
+  {
+    const wiCount = await page.locator("[data-loupe-writein]").count();
+    ok("write-in input renders on every open group", wiCount === 5, `${wiCount} inputs (expect 5)`);
+    const inGroup = await page.locator('[role="radiogroup"] [data-loupe-writein]').count();
+    ok("write-in sits outside the radiogroup", inGroup === 0, `${inGroup} inside`);
+
+    // Per-keystroke typing: focus/caret survive the store-driven re-renders
+    // (a scrambled value would betray a caret reset).
+    const headlineWi = page.locator('[data-loupe-writein="headline"]');
+    const briefBefore = await readBrief();
+    await headlineWi.click();
+    await page.keyboard.type("With a stencil variant");
+    ok(
+      "typing survives re-renders (focus + caret restored)",
+      (await headlineWi.inputValue()) === "With a stencil variant",
+      `value=${await headlineWi.inputValue()}`,
+    );
+    ok("non-empty write-in marks the input filled", (await headlineWi.getAttribute("data-state")) === "filled");
+    const briefAfter = await readBrief();
+    ok(
+      "brief appends the write-in note alongside the locked pick",
+      briefAfter !== briefBefore && briefAfter.includes('Headline voice: Bold humanist sans — write-in: "With a stencil variant"'),
+    );
+    const progress = await page.locator("[data-loupe-progress]").first().innerText();
+    ok("pick + write-in still counts the group once", progress.trim() === "5", `progress=${progress}`);
+
+    // Arrow keys inside the input edit text — they must not drive tile nav.
+    const checkedBefore = await page.locator('[data-loupe-part="tile"][aria-checked="true"]').count();
+    await headlineWi.focus();
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowRight");
+    const checkedAfter = await page.locator('[data-loupe-part="tile"][aria-checked="true"]').count();
+    ok("arrow keys in the write-in don't move tile locks", checkedBefore === checkedAfter);
+
+    // Write-in-only: clear the color pick, then the write-in IS the decision.
+    await page.locator('[data-loupe-clear="color"]').click();
+    const previewBefore = await readPreview();
+    const colorWi = page.locator('[data-loupe-writein="color"]');
+    await colorWi.fill("Copper on porcelain");
+    const brief2 = await readBrief();
+    ok(
+      "write-in-only becomes the group's decision in the brief",
+      brief2.includes('Color system: [WRITE-IN] "Copper on porcelain"'),
+    );
+    const previewAfter = await readPreview();
+    ok(
+      "composed preview reflects the write-in decision",
+      previewAfter !== previewBefore && previewAfter.includes("Copper on porcelain"),
+    );
+    const progress2 = await page.locator("[data-loupe-progress]").first().innerText();
+    ok("write-in-only group counts as decided", progress2.trim() === "5", `progress=${progress2}`);
+
+    // Per-group Clear drops the write-in with the pick.
+    await page.locator('[data-loupe-clear="color"]').click();
+    ok("Clear removes the write-in", (await colorWi.inputValue()) === "");
+    const progress3 = await page.locator("[data-loupe-progress]").first().innerText();
+    ok("cleared write-in no longer counts", progress3.trim() === "4", `progress=${progress3}`);
+
+    // Keyboard tile nav still intact after write-in interactions.
+    await page.locator('[data-loupe-part="tile"][data-group="hero"][data-option="portrait"]').focus();
+    await page.keyboard.press("ArrowRight");
+    const sparseChecked = await page
+      .locator('[data-loupe-part="tile"][data-group="hero"][data-option="sparse"]')
+      .getAttribute("aria-checked");
+    ok("tile arrow-nav unaffected by write-ins", sparseChecked === "true", `hero.sparse=${sparseChecked}`);
+
+    // Restore the recommended stack, keep one visible write-in for the shot.
+    await page.locator("[data-loupe-recommend]").first().click();
+    await headlineWi.fill("With a stencil variant");
+  }
+
+  // ---- No overflow / clipping (desktop) ----
+  {
+    ok("no horizontal overflow (desktop)", (await overflow(page)) <= 1, `${await overflow(page)}px`);
+    let clipped = 0;
+    for (const wi of await page.locator("[data-loupe-writein]").all()) {
+      const box = await wi.boundingBox();
+      if (!box || box.x < 0 || box.x + box.width > 1440) clipped++;
+    }
+    ok("write-in inputs unclipped (desktop)", clipped === 0, `${clipped} clipped`);
+  }
+
   // ---- Desktop screenshot ----
   await page.evaluate(() => window.scrollTo(0, 0));
   await settle(page);
@@ -202,6 +293,20 @@ async function main() {
   attach(mpage);
   await mpage.goto(url, { waitUntil: "load", timeout: 30000 });
   await settle(mpage);
+
+  // Write-ins render and fit at mobile too.
+  {
+    const wiCount = await mpage.locator("[data-loupe-writein]").count();
+    ok("write-in inputs render on mobile", wiCount === 5, `${wiCount} inputs`);
+    ok("no horizontal overflow (mobile 390)", (await overflow(mpage)) <= 1, `${await overflow(mpage)}px`);
+    let clipped = 0;
+    for (const wi of await mpage.locator("[data-loupe-writein]").all()) {
+      const box = await wi.boundingBox();
+      if (!box || box.x < 0 || box.x + box.width > 390) clipped++;
+    }
+    ok("write-in inputs unclipped (mobile)", clipped === 0, `${clipped} clipped`);
+  }
+
   const sheet = mpage.locator("[data-loupe-sheet-toggle]");
   if (await sheet.isVisible()) {
     await sheet.click();
@@ -211,6 +316,46 @@ async function main() {
   await mpage.screenshot({ path: mobilePath, fullPage: true });
   ok("mobile screenshot written", fs.existsSync(mobilePath), mobilePath);
   await mctx.close();
+
+  // ---------------- Persistence (storageKey artifact) ----------------
+  // Write-ins ride the same storageKey mechanism as tile locks, inside the
+  // self-contained artifact (no external deps).
+  {
+    const pOut = path.join(here, "dist", "_persist");
+    const pGen = await generate(config, {
+      outDir: pOut,
+      assetsDir: here,
+      layout: "page",
+      storageKey: "brand-starter-verify",
+    });
+    const pctx = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      reducedMotion: "reduce",
+      colorScheme: "light",
+    });
+    const ppage = await pctx.newPage();
+    attach(ppage);
+    const pUrl = pathToFileURL(pGen.htmlPath).href;
+    await ppage.goto(pUrl, { waitUntil: "load", timeout: 30000 });
+    await ppage.locator('[data-loupe-part="tile"][data-group="color"][data-option="sageStone"]').click();
+    await ppage.locator('[data-loupe-writein="headline"]').fill("Persistent stencil note");
+    await ppage.reload({ waitUntil: "load" });
+    ok(
+      "write-in persists across reload (storageKey)",
+      (await ppage.locator('[data-loupe-writein="headline"]').inputValue()) === "Persistent stencil note",
+    );
+    ok(
+      "tile lock persists alongside it",
+      (await ppage.locator('[data-loupe-part="tile"][data-group="color"][data-option="sageStone"]').getAttribute("aria-checked")) === "true",
+    );
+    ok(
+      "reloaded brief still carries the write-in",
+      (await ppage.locator("[data-loupe-brief]").inputValue()).includes('write-in: "Persistent stencil note"'),
+    );
+    await ppage.evaluate(() => localStorage.clear());
+    await pctx.close();
+    fs.rmSync(pOut, { recursive: true, force: true });
+  }
 
   await browser.close();
 

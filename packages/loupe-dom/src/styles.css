@@ -56,6 +56,7 @@
 }
 
 .loupe button,
+.loupe input,
 .loupe textarea {
   font: inherit;
   color: inherit;
@@ -183,6 +184,47 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
+}
+
+/* Write-in ("something else") — the always-on free-text answer under an open
+   group's tiles. A non-empty value takes the same primary border + ring as a
+   checked tile, so the group visibly reads decided. */
+.loupe-writein {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.loupe-writein__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--loupe-color-fg-muted);
+}
+.loupe-writein__input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--loupe-color-border);
+  border-radius: var(--loupe-radius-sm);
+  background: var(--loupe-color-surface);
+  color: var(--loupe-color-fg);
+  font-size: 0.88rem;
+  transition:
+    border-color 0.15s var(--loupe-ease-out),
+    box-shadow 0.15s var(--loupe-ease-out);
+}
+.loupe-writein__input::placeholder {
+  color: color-mix(in srgb, var(--loupe-color-fg-muted) 70%, transparent);
+}
+.loupe-writein__input[data-state="filled"] {
+  border-color: var(--loupe-color-primary);
+  box-shadow: 0 0 0 2px var(--loupe-color-primary);
+}
+.loupe-writein__input:focus-visible {
+  outline: none;
+  border-color: var(--loupe-color-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--loupe-color-ring) 55%, transparent);
 }
 .loupe-tile {
   position: relative;

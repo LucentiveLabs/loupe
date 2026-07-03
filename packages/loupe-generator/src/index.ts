@@ -21,7 +21,6 @@ import {
   DEFAULT_TOKENS,
   type Selections,
   escapeHtml,
-  recommendedSelections,
   safeUrl,
   tokensToCssText,
 } from "@lucentive-labs/loupe-core";
@@ -37,7 +36,11 @@ export interface GenerateOptions {
    * relative. Defaults to the current working directory.
    */
   assetsDir?: string;
-  /** Initial selections embedded in the artifact. Defaults to recommended. */
+  /**
+   * Initial selections embedded in the artifact (overrides storage +
+   * recommended). Omit to let the runtime fall back to persisted state
+   * (`storageKey`), then the recommended picks.
+   */
   initial?: Selections;
   /** localStorage key for persistence inside the artifact. Omit = ephemeral. */
   storageKey?: string;
@@ -173,7 +176,7 @@ function fontLinks(theme?: Config["theme"]): string {
 
 function htmlTemplate(args: {
   config: Config;
-  initial: Selections;
+  initial?: Selections;
   storageKey?: string;
   css: string;
   js: string;
@@ -191,6 +194,14 @@ function htmlTemplate(args: {
   const storageLine = storageKey
     ? `window.__LOUPE_STORAGE_KEY__ = ${safeJson(storageKey)};`
     : "";
+  // Only embed an explicit initial: mount()'s `initial` overrides storage, so
+  // unconditionally baking in the recommended picks would defeat storageKey
+  // persistence across reloads. Without it the store falls back to
+  // storage -> recommended on its own.
+  const initialLine =
+    initial !== undefined
+      ? `window.__LOUPE_INITIAL__ = ${safeJson(initial)};`
+      : "";
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -210,7 +221,7 @@ ${themeCss}
     <div id="loupe-app"></div>
     <script>
       window.__LOUPE_CONFIG__ = ${safeJson(config)};
-      window.__LOUPE_INITIAL__ = ${safeJson(initial)};
+      ${initialLine}
       ${storageLine}
     </script>
     <script>
@@ -295,12 +306,13 @@ export async function generate(
   const js = result.outputFiles[0]?.text ?? "";
   if (!js) throw new Error("esbuild produced no output for the browser entry");
 
-  // 4) Inline CSS + JS into a deterministic HTML template.
+  // 4) Inline CSS + JS into a deterministic HTML template. `initial` is only
+  // embedded when the caller provided one (see htmlTemplate) — the runtime
+  // store already defaults to storage -> recommended.
   const css = resolveStylesCss();
-  const initial = opts.initial ?? recommendedSelections(artifactConfig);
   const html = htmlTemplate({
     config: artifactConfig,
-    initial,
+    initial: opts.initial,
     storageKey: opts.storageKey,
     css,
     js,

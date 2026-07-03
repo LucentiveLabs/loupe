@@ -16,11 +16,14 @@ import {
   connect,
   cropToCss,
   escapeHtml,
+  groupAllowsWriteIn,
   safeUrl,
   selectComposedPreview,
   selectExportBrief,
   selectProgress,
   selectedOption,
+  selectedWriteIn,
+  writeInKey,
 } from "@lucentive-labs/loupe-core";
 
 /** Tile media aspect ratio (width / height). 4:3 per spec suggestion. */
@@ -217,7 +220,23 @@ export function renderTile(
   return `<button type="button" class="loupe-tile" ${attrs(tileProps)}>${badge}<span class="loupe-tile__media">${renderSpecimen(config, option.specimen, option.label)}</span><span class="loupe-tile__cap"><span class="loupe-tile__check">${CHECK_SVG}</span><span class="loupe-tile__label">${escapeHtml(option.label)}</span></span>${cap}</button>`;
 }
 
-/** One decision group: heading + a row of tiles (radiogroup). */
+/**
+ * The always-on "something else" write-in under an open group's tiles. Sits
+ * OUTSIDE the radiogroup (it is a text input, not a radio) and mirrors a
+ * checked tile's decided styling via `data-state="filled"`.
+ */
+export function renderWriteIn(group: TGroup, sel: Selections): string {
+  if (!groupAllowsWriteIn(group)) return "";
+  const raw = sel[writeInKey(group.id)] ?? "";
+  const gid = escapeHtml(group.id);
+  const state = raw.trim() === "" ? "empty" : "filled";
+  return `<div class="loupe-writein">
+    <label class="loupe-writein__label" for="loupe-wi-${gid}">Something else — type your own</label>
+    <input class="loupe-writein__input" id="loupe-wi-${gid}" type="text" value="${escapeHtml(raw)}" placeholder="Describe another direction" autocomplete="off" spellcheck="false" data-loupe-writein="${gid}" data-state="${state}" />
+  </div>`;
+}
+
+/** One decision group: heading + a row of tiles (radiogroup) + write-in. */
 export function renderGroup(
   config: Config,
   group: TGroup,
@@ -230,7 +249,7 @@ export function renderGroup(
     ? `<div class="loupe-group__prompt">${escapeHtml(group.prompt)}</div>`
     : "";
   const tiles = group.options.map((o) => renderTile(config, group, o, sel)).join("");
-  const cleared = sel[group.id] === undefined;
+  const cleared = sel[group.id] === undefined && selectedWriteIn(group, sel) === "";
   const lockBadge = group.locked
     ? `<span class="loupe-group__lock" title="Decision locked">${LOCK_SVG} locked</span>`
     : `<button type="button" class="loupe-group__clear" data-loupe-clear="${escapeHtml(group.id)}"${cleared ? " hidden" : ""}>Clear</button>`;
@@ -244,6 +263,7 @@ export function renderGroup(
     ${lockBadge}
   </div>
   <div class="loupe-tiles" ${attrs(groupProps)}>${tiles}</div>
+  ${renderWriteIn(group, sel)}
 </section>`;
 }
 
@@ -279,9 +299,14 @@ function renderThumbs(config: Config, sel: Selections): string {
   const cells = config.groups
     .map((g) => {
       const o = selectedOption(g, sel);
-      const { style, glyph } = thumbStyle(config, o);
-      const cls = o ? "loupe-thumb" : "loupe-thumb loupe-thumb--empty";
-      const title = `${g.title}: ${o ? o.label : "—"}`;
+      const wi = selectedWriteIn(g, sel);
+      // A write-in-only group is decided: pencil glyph instead of the empty hatch.
+      const { style, glyph } =
+        !o && wi
+          ? { style: "background:var(--loupe-color-surface)", glyph: "✎" }
+          : thumbStyle(config, o);
+      const cls = o || wi ? "loupe-thumb" : "loupe-thumb loupe-thumb--empty";
+      const title = `${g.title}: ${o ? o.label : wi ? `"${wi}"` : "—"}`;
       const inner = glyph ? `<span class="loupe-thumb__g">${escapeHtml(glyph)}</span>` : "";
       return `<button type="button" class="${cls}" data-loupe-thumb="${escapeHtml(g.id)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" style="${style}">${inner}</button>`;
     })
@@ -297,6 +322,10 @@ function renderPreviewBand(
   const o = band.option;
   const labelText = o ? o.label : `${band.group.title} — open`;
   if (!o) {
+    // A write-in with no locked option IS the decision: show the text itself.
+    if (band.writeIn) {
+      return `<div class="loupe-pv__band loupe-pv__band--decision" data-loupe-pv-slot="${escapeHtml(band.slot)}"><span class="loupe-pv__decision">&ldquo;${escapeHtml(band.writeIn)}&rdquo;</span><span class="loupe-pv__tag">${escapeHtml(band.group.title)} — write-in</span></div>`;
+    }
     return `<div class="loupe-pv__band loupe-pv__band--empty" data-loupe-pv-slot="${escapeHtml(band.slot)}"><span class="loupe-pv__tag">${escapeHtml(labelText)}</span></div>`;
   }
   const s = o.specimen;
@@ -328,7 +357,7 @@ function renderPreviewBand(
 /** The composed preview panel built from `selectComposedPreview`. */
 export function renderComposedPreview(config: Config, sel: Selections): string {
   const model = selectComposedPreview(config, sel);
-  const anyLocked = model.bands.some((b) => b.option);
+  const anyLocked = model.bands.some((b) => b.option || b.writeIn);
   if (!anyLocked) {
     return `<div class="loupe-pv" data-loupe-preview><div class="loupe-pv__empty">Lock a few tiles —<br />the live preview composes here.</div></div>`;
   }
@@ -466,7 +495,7 @@ function renderFlowApp(config: Config, sel: Selections, rawStep: number): string
 
   const rail = groups
     .map((g, i) => {
-      const done = sel[g.id] !== undefined;
+      const done = sel[g.id] !== undefined || selectedWriteIn(g, sel) !== "";
       const active = i === step;
       const cls = `loupe-railstep${active ? " is-active" : ""}${done ? " is-done" : ""}`;
       return `<button type="button" class="${cls}" data-loupe-rail-step="${i}" aria-current="${active ? "step" : "false"}" aria-label="${escapeHtml(g.title)}"><span class="loupe-railstep__dot" aria-hidden="true"></span></button>`;

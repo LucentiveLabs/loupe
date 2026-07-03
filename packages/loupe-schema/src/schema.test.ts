@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { Rect, Specimen, parseConfig, toJsonSchema, validateConfig } from "./index";
+import {
+  type Config,
+  Rect,
+  Specimen,
+  parseConfig,
+  toJsonSchema,
+  validateConfig,
+} from "./index";
 
 describe("Rect bounds", () => {
   it("accepts an in-bounds rect", () => {
@@ -33,6 +40,83 @@ describe("toJsonSchema", () => {
     const js = toJsonSchema();
     expect(js).toBeTypeOf("object");
     expect((js as { properties?: unknown }).properties).toBeDefined();
+  });
+});
+
+describe("allowWriteIn (the 'something else' write-in contract)", () => {
+  const twoOptions = [
+    { id: "x", label: "X", specimen: { kind: "palette" as const, colors: ["#fff"] } },
+    { id: "y", label: "Y", specimen: { kind: "palette" as const, colors: ["#000"] } },
+  ];
+
+  it("is optional and stays absent when omitted (open groups default to allowed)", () => {
+    const c = parseConfig({
+      version: 1,
+      assets: {},
+      groups: [{ id: "g", title: "G", options: twoOptions }],
+    });
+    // Omitted = undefined; renderers treat that as allowed (default-true).
+    expect(c.groups[0]!.allowWriteIn).toBeUndefined();
+    expect(validateConfig(c)).toEqual([]);
+  });
+
+  it("accepts an explicit opt-out on an open group", () => {
+    const c = parseConfig({
+      version: 1,
+      assets: {},
+      groups: [{ id: "g", title: "G", allowWriteIn: false, options: twoOptions }],
+    });
+    expect(c.groups[0]!.allowWriteIn).toBe(false);
+    expect(validateConfig(c)).toEqual([]);
+  });
+
+  it("rejects allowWriteIn:true on a locked group (decided context) at parse", () => {
+    expect(() =>
+      parseConfig({
+        version: 1,
+        assets: {},
+        groups: [
+          {
+            id: "g",
+            title: "G",
+            locked: true,
+            allowWriteIn: true,
+            options: [{ id: "x", label: "X", recommended: true, specimen: { kind: "palette", colors: ["#fff"] } }],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("validateConfig flags the locked+allowWriteIn contradiction on a built config", () => {
+    // Hand-built (unparsed) config, as validateConfig also guards programmatic use.
+    const c: Config = {
+      version: 1,
+      assets: {},
+      groups: [
+        {
+          id: "g",
+          title: "G",
+          locked: true,
+          allowWriteIn: true,
+          options: [{ id: "x", label: "X", recommended: true, specimen: { kind: "palette", colors: ["#fff"] } }],
+        },
+      ],
+    };
+    expect(validateConfig(c)).toContain(
+      'locked group "g" cannot allow a write-in (locked groups are decided context)',
+    );
+  });
+
+  it("rejects group ids in the reserved '~' selection-state namespace", () => {
+    const c = parseConfig({
+      version: 1,
+      assets: {},
+      groups: [{ id: "~writeIn:g", title: "G", options: twoOptions }],
+    });
+    expect(validateConfig(c)).toContain(
+      'group id "~writeIn:g" must not start with "~" (reserved for internal selection-state keys)',
+    );
   });
 });
 
