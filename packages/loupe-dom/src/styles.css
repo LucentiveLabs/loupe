@@ -266,6 +266,9 @@
   display: block;
   aspect-ratio: 4 / 3;
   overflow: hidden;
+  /* Enable container-query units so text specimens scale to the tile width
+     (a narrow tile — e.g. an embed in a slim docs column — otherwise clips). */
+  container-type: inline-size;
   background: color-mix(in srgb, var(--loupe-color-border) 40%, var(--loupe-color-surface));
 }
 .loupe-tile__cap {
@@ -413,9 +416,13 @@
   color: color-mix(in srgb, var(--loupe-color-fg) 55%, var(--loupe-color-signal));
 }
 .loupe-type__sample {
-  font-size: 1.1rem;
+  /* Scales with the tile; clamps at 1.1rem so normal/wide tiles are unchanged,
+     shrinks only in a narrow container. `anywhere` breaks long words (e.g.
+     "Directional") instead of letting them overflow into the clipped media. */
+  font-size: clamp(0.7rem, 11cqi, 1.1rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
 }
 
 /* ---------------- Motion specimens ---------------- */
