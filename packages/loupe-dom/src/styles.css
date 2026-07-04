@@ -122,6 +122,10 @@
   max-width: 1240px;
   margin: 0 auto;
   padding: 0 clamp(1rem, 4vw, 3rem);
+  /* Query container so the layout reflows on its OWN width, not the viewport —
+     Loupe embedded in a slim column (docs, an app panel) stacks correctly even
+     at a wide viewport. See the @container rule below. */
+  container: loupe-page / inline-size;
 }
 .loupe-lab {
   padding: clamp(1.5rem, 4vw, 3rem) 0;
@@ -1223,6 +1227,26 @@
 @media (max-width: 680px) {
   .loupe-tiles {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Loupe embedded in a slim column at a WIDE viewport: the viewport media queries
+   above don't fire, so option tiles get crushed in the 2-col sidebar layout. Reflow
+   on CONTAINER width instead — stack the preview below the groups so tiles are full
+   width. Guarded to wide viewports (min-width: 1081px) for two reasons: (1) at <=1080
+   the viewport rules above already own the layout + the fixed bottom-sheet, which we
+   must NOT override; (2) a standalone artifact (container ~= viewport) at >1080px has
+   a .loupe-main content box of ~985px+, always above this 900px threshold, so it never
+   reflows early — its behavior is unchanged at every width. Only genuine narrow
+   embeds trip it. */
+@media (min-width: 1081px) {
+  @container loupe-page (max-width: 900px) {
+    .loupe-lab__grid {
+      grid-template-columns: 1fr;
+    }
+    .loupe-stack {
+      position: static;
+    }
   }
 }
 
