@@ -8,9 +8,39 @@ import type {
 
 /* ------------------------------------------------------------------ *
  * Selection state (single-select per group for v1)
+ *
+ * The record stays flat: `sel[groupId]` is the locked option id. Per-group
+ * free-text write-ins ("something else") live in the SAME record under the
+ * reserved `~writeIn:<groupId>` key, so existing persisted state loads
+ * unchanged and older readers (which only look up group ids) simply ignore
+ * the extra keys. Group ids starting with "~" are rejected by the schema's
+ * `validateConfig`, so the namespaces cannot collide.
  * ------------------------------------------------------------------ */
 
 export type Selections = Record<string, string | undefined>;
+
+/** Reserved Selections-key prefix for per-group write-in text. */
+export const WRITE_IN_KEY_PREFIX = "~writeIn:";
+
+/** The Selections key holding a group's raw write-in text. */
+export function writeInKey(groupId: string): string {
+  return `${WRITE_IN_KEY_PREFIX}${groupId}`;
+}
+
+/**
+ * Whether a group renders + accepts the "something else" write-in. Open groups
+ * always do unless the config sets `allowWriteIn: false`; locked groups never
+ * do (they are decided context — any stray write-in state is ignored).
+ */
+export function groupAllowsWriteIn(group: TGroup): boolean {
+  return group.locked !== true && group.allowWriteIn !== false;
+}
+
+/** A group's effective write-in text: trimmed, "" when blank or not allowed. */
+export function selectedWriteIn(group: TGroup, sel: Selections): string {
+  if (!groupAllowsWriteIn(group)) return "";
+  return sel[writeInKey(group.id)]?.trim() ?? "";
+}
 
 export interface StoragePort {
   get(): Selections | null;
@@ -57,7 +87,9 @@ export interface LoupeStore {
   getServerSnapshot(): Selections;
   subscribe(listener: () => void): () => void;
   lock(groupId: string, optionId: string): void;
-  clear(groupId: string): void;
+  /** Set the group's free-text write-in (raw). "" removes it. Refused for locked / write-in-suppressed groups. */
+  writeIn(groupId: string, value: string): void;
+  clear(groupId: string): void; // drops the pick AND the write-in
   reset(): void; // back to recommended
   clearAll(): void; // to blank
 }
@@ -83,6 +115,9 @@ export function createLoupeStore(
 ): LoupeStore {
   const server = Object.freeze(recommendedSelections(config));
   const lockedIds = new Set(config.groups.filter((g) => g.locked).map((g) => g.id));
+  const writeInIds = new Set(
+    config.groups.filter(groupAllowsWriteIn).map((g) => g.id),
+  );
   /** Locked groups always hold their recommended pick, whatever the source. */
   const pinLocked = (s: Selections): Selections => {
     if (lockedIds.size === 0) return s;
@@ -116,10 +151,25 @@ export function createLoupeStore(
       if (state[groupId] === optionId) return;
       commit({ ...state, [groupId]: optionId });
     },
+    writeIn(groupId, value) {
+      if (!writeInIds.has(groupId)) return; // locked, suppressed, or unknown
+      const key = writeInKey(groupId);
+      if ((state[key] ?? "") === value) return;
+      if (value === "") {
+        const next = { ...state };
+        delete next[key];
+        commit(next);
+      } else {
+        commit({ ...state, [key]: value });
+      }
+    },
     clear(groupId) {
       if (lockedIds.has(groupId)) return;
-      if (state[groupId] === undefined) return;
-      commit({ ...state, [groupId]: undefined });
+      const key = writeInKey(groupId);
+      if (state[groupId] === undefined && state[key] === undefined) return;
+      const next = { ...state, [groupId]: undefined };
+      delete next[key];
+      commit(next);
     },
     reset() {
       commit({ ...recommendedSelections(config) });
@@ -139,12 +189,15 @@ export function selectedOption(group: TGroup, sel: Selections): TOption | null {
   return id ? (group.options.find((o) => o.id === id) ?? null) : null;
 }
 
+/** A group counts as decided with a locked option OR a non-empty write-in. */
 export function selectProgress(
   config: Config,
   sel: Selections,
 ): { locked: number; total: number } {
   let locked = 0;
-  for (const g of config.groups) if (sel[g.id]) locked++;
+  for (const g of config.groups) {
+    if (sel[g.id] || selectedWriteIn(g, sel)) locked++;
+  }
   return { locked, total: config.groups.length };
 }
 
@@ -153,6 +206,8 @@ export interface PreviewBandModel {
   as: string;
   group: TGroup;
   option: TOption | null;
+  /** Effective write-in text ("" when none) — a write-in-only band is decided. */
+  writeIn: string;
 }
 export interface PreviewModel {
   headline: string | null;
@@ -169,7 +224,15 @@ export function selectComposedPreview(
     bands = config.preview.bands.flatMap((b) => {
       const group = byId(b.fromGroup);
       if (!group) return [];
-      return [{ slot: b.slot, as: b.as ?? "band", group, option: selectedOption(group, sel) }];
+      return [
+        {
+          slot: b.slot,
+          as: b.as ?? "band",
+          group,
+          option: selectedOption(group, sel),
+          writeIn: selectedWriteIn(group, sel),
+        },
+      ];
     });
   } else {
     bands = config.groups.map((g) => ({
@@ -177,6 +240,7 @@ export function selectComposedPreview(
       as: "band",
       group: g,
       option: selectedOption(g, sel),
+      writeIn: selectedWriteIn(g, sel),
     }));
   }
   const headlineGroup = config.preview?.headlineFrom
@@ -214,6 +278,8 @@ export function selectExportBrief(config: Config, sel: Selections): ExportBrief 
       flags,
       // true only when a recommendation exists and the pick differs from it
       deviation: Boolean(o && rec && o.id !== rec.id),
+      // the group's "something else" free text; null when blank / not allowed
+      writeIn: selectedWriteIn(g, sel) || null,
     };
   });
   const json: Record<string, unknown> = {
@@ -224,10 +290,13 @@ export function selectExportBrief(config: Config, sel: Selections): ExportBrief 
   };
   const line = (d: (typeof decisions)[number]) => {
     const head = d.locked ? `- [LOCKED] ${d.title}` : `- ${d.title}`;
-    const label = d.label ?? "(open)";
+    // With no locked option, a non-empty write-in IS the group's decision.
+    const label = d.label ?? (d.writeIn ? `[WRITE-IN] "${d.writeIn}"` : "(open)");
     const dev = d.deviation ? " (differs from recommendation)" : "";
     const fl = d.flags.length ? ` [${d.flags.join(", ")}]` : "";
-    return `${head}: ${label}${dev}${fl}`;
+    // Alongside a locked option, the write-in is an appended note.
+    const wi = d.label && d.writeIn ? ` — write-in: "${d.writeIn}"` : "";
+    return `${head}: ${label}${dev}${fl}${wi}`;
   };
   const lines: string[] = [
     `# ${config.title ?? "Loupe decision lock"}`,
@@ -285,11 +354,12 @@ const round = (n: number) => {
  * Theming — semantic token contract → CSS variables (`--loupe-*`)
  * ------------------------------------------------------------------ */
 
-export const DEFAULT_TOKENS: TThemeTokens = {
-  // Neutral "graphite" default: unbranded, calm, and deliberately NOT teal/green,
-  // so an unthemed artifact imposes no palette and any project theme reads clean
-  // on top of it. Low-chroma slate accent keeps color-signal in contrast with the
-  // near-black color-primary (Recommended button / pill number render one on the other).
+/**
+ * Neutral "graphite" preset — unbranded, calm, deliberately NOT teal/green, so a
+ * project theme reads clean on top. This was the default through v2.0; pass it as
+ * `config.theme` (or `THEME_PRESETS.neutral`) when you want a blank canvas.
+ */
+export const NEUTRAL_TOKENS: TThemeTokens = {
   "color-bg": "oklch(98.5% 0.003 255)",
   "color-surface": "oklch(99.4% 0.002 255)",
   "color-fg": "oklch(22% 0.014 260)",
@@ -300,6 +370,7 @@ export const DEFAULT_TOKENS: TThemeTokens = {
   "color-ring": "oklch(70% 0.10 258)",
   "color-danger": "oklch(55% 0.16 25)",
   "color-signal": "oklch(80% 0.10 258)",
+  "color-signal-fg": "oklch(22% 0.014 260)",
   "radius-sm": "8px",
   "radius-md": "14px",
   "radius-lg": "20px",
@@ -316,6 +387,47 @@ export const DEFAULT_TOKENS: TThemeTokens = {
   "duration-slow": "5000ms",
   "shadow-md": "0 12px 30px -18px rgba(16,24,32,0.5)",
 };
+
+/**
+ * DEFAULT — the "Night Atlas" standard look every unthemed artifact wears out of
+ * the box: deep teal-black ground, ivory ink, luminous turquoise accent, with a
+ * distinct lighter-turquoise signal so done-state and the count badge stay legible.
+ * A project's own `config.theme` still overrides this per-project.
+ */
+export const DEFAULT_TOKENS: TThemeTokens = {
+  "color-bg": "#0c1a1c",
+  "color-surface": "#11201e",
+  "color-fg": "#e7ece9",
+  "color-fg-muted": "#9fb2ac",
+  "color-primary": "#2fd4c4",
+  "color-primary-fg": "#04211d",
+  "color-border": "#22403b",
+  "color-ring": "#2fd4c4",
+  "color-danger": "#ff7a6b",
+  "color-signal": "#7ee7db",
+  "color-signal-fg": "#04211d",
+  "radius-sm": "8px",
+  "radius-md": "14px",
+  "radius-lg": "20px",
+  "space-1": "0.25rem",
+  "space-2": "0.5rem",
+  "space-3": "0.75rem",
+  "space-4": "1rem",
+  "space-5": "1.5rem",
+  "space-6": "2.5rem",
+  "font-sans": "'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif",
+  "font-serif": "Georgia, 'Times New Roman', serif",
+  "font-mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+  "ease-out": "cubic-bezier(0.22, 1, 0.36, 1)",
+  "duration-slow": "5000ms",
+  "shadow-md": "0 18px 40px -22px rgba(0,0,0,0.7)",
+};
+
+/** Named theme presets shipped for quick, on-brand theming. */
+export const THEME_PRESETS = {
+  nightAtlas: DEFAULT_TOKENS,
+  neutral: NEUTRAL_TOKENS,
+} as const;
 
 /** A safe kebab custom-property ident (nothing that could escape the var name). */
 const SAFE_TOKEN_KEY = /^[a-zA-Z0-9-]+$/;

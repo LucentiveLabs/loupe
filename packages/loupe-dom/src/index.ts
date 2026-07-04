@@ -24,6 +24,7 @@ export {
   renderComposedPreview,
   renderExportBrief,
   renderStack,
+  renderWriteIn,
   TILE_AR,
 } from "./render.js";
 

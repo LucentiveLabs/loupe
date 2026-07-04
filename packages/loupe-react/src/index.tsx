@@ -42,6 +42,7 @@ import {
   connect,
   cropToCss,
   createLoupeStore,
+  groupAllowsWriteIn,
   localStorageAdapter,
   resolveKeydown,
   safeUrl,
@@ -49,7 +50,9 @@ import {
   selectExportBrief,
   selectProgress,
   selectedOption,
+  selectedWriteIn,
   tokensToCssVars,
+  writeInKey,
 } from "@lucentive-labs/loupe-core";
 
 /** Tile media aspect ratio (width / height). Matches loupe-dom `TILE_AR`. */
@@ -493,6 +496,44 @@ function cssEscape(s: string): string {
     : s.replace(/["\\]/g, "\\$&");
 }
 
+/**
+ * The always-on "something else" write-in under an open group's tiles —
+ * structurally equivalent to loupe-dom `renderWriteIn` (same classes /
+ * `data-loupe-writein` / `data-state`). Controlled by the core store, so
+ * typing flows into the brief, preview, and progress like a tile lock.
+ */
+function WriteIn({
+  group,
+  sel,
+  store,
+}: {
+  group: TGroup;
+  sel: Selections;
+  store: LoupeStore;
+}): ReactNode {
+  if (!groupAllowsWriteIn(group)) return null;
+  const raw = sel[writeInKey(group.id)] ?? "";
+  return (
+    <div className="loupe-writein">
+      <label className="loupe-writein__label" htmlFor={`loupe-wi-${group.id}`}>
+        Something else — type your own
+      </label>
+      <input
+        className="loupe-writein__input"
+        id={`loupe-wi-${group.id}`}
+        type="text"
+        value={raw}
+        placeholder="Describe another direction"
+        autoComplete="off"
+        spellCheck={false}
+        data-loupe-writein={group.id}
+        data-state={raw.trim() === "" ? "empty" : "filled"}
+        onChange={(ev) => store.writeIn(group.id, ev.currentTarget.value)}
+      />
+    </div>
+  );
+}
+
 function Group({
   config,
   group,
@@ -508,7 +549,7 @@ function Group({
 }): ReactNode {
   const num = String(index + 1).padStart(2, "0");
   const groupProps = normalizeProps(conn.getGroupProps(group));
-  const cleared = sel[group.id] === undefined;
+  const cleared = sel[group.id] === undefined && selectedWriteIn(group, sel) === "";
   return (
     <section
       className={group.locked ? "loupe-group loupe-group--locked" : "loupe-group"}
@@ -545,6 +586,7 @@ function Group({
           <Tile key={o.id} config={config} group={group} option={o} sel={sel} store={store} />
         ))}
       </div>
+      <WriteIn group={group} sel={sel} store={store} />
     </section>
   );
 }
@@ -605,9 +647,14 @@ function Thumbs({
     <div className="loupe-thumbs" data-loupe-thumbs>
       {config.groups.map((g) => {
         const o = selectedOption(g, sel);
-        const { style, glyph } = thumbStyle(config, o);
-        const cls = o ? "loupe-thumb" : "loupe-thumb loupe-thumb--empty";
-        const title = `${g.title}: ${o ? o.label : "—"}`;
+        const wi = selectedWriteIn(g, sel);
+        // A write-in-only group is decided: pencil glyph instead of the empty hatch.
+        const { style, glyph } =
+          !o && wi
+            ? { style: { background: "var(--loupe-color-surface)" } as CSSProperties, glyph: "✎" }
+            : thumbStyle(config, o);
+        const cls = o || wi ? "loupe-thumb" : "loupe-thumb loupe-thumb--empty";
+        const title = `${g.title}: ${o ? o.label : wi ? `"${wi}"` : "—"}`;
         return (
           <button
             key={g.id}
@@ -649,6 +696,15 @@ function PreviewBandView({
   const o = band.option;
   const labelText = o ? o.label : `${band.group.title} — open`;
   if (!o) {
+    // A write-in with no locked option IS the decision: show the text itself.
+    if (band.writeIn) {
+      return (
+        <div className="loupe-pv__band loupe-pv__band--decision" data-loupe-pv-slot={band.slot}>
+          <span className="loupe-pv__decision">{`“${band.writeIn}”`}</span>
+          <span className="loupe-pv__tag">{`${band.group.title} — write-in`}</span>
+        </div>
+      );
+    }
     return (
       <div
         className="loupe-pv__band loupe-pv__band--empty"
@@ -728,7 +784,7 @@ function ComposedPreview({
   sel: Selections;
 }): ReactNode {
   const model = selectComposedPreview(config, sel);
-  const anyLocked = model.bands.some((b) => b.option);
+  const anyLocked = model.bands.some((b) => b.option || b.writeIn);
   if (!anyLocked) {
     return (
       <div className="loupe-pv" data-loupe-preview>

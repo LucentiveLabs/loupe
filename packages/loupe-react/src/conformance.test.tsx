@@ -198,6 +198,15 @@ describe("loupe-react ⇄ loupe-dom structural parity", () => {
     }
   });
 
+  it("write-in inputs render at parity: every open group, never a locked one", () => {
+    const openIds = cfg.groups.filter((g) => !g.locked).map((g) => g.id);
+    const domWi = attrValues(domHtml, "data-loupe-writein");
+    const reactWi = attrValues(reactHtml, "data-loupe-writein");
+    expect([...domWi].sort()).toEqual([...openIds].sort());
+    expect([...reactWi].sort()).toEqual([...domWi].sort());
+    expect(domWi).not.toContain("license"); // locked = decided context
+  });
+
   it("decision specimen + locked group render at parity (DOM ⇄ React)", () => {
     for (const marker of [
       "loupe-decision__summary", // decision specimen body

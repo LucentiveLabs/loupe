@@ -120,6 +120,14 @@ export const Group = z
      * a single option; open groups still need 2-6 (see `validateConfig`).
      */
     locked: z.boolean().optional(),
+    /**
+     * Whether the group renders the free-text "something else" write-in under
+     * its tiles. DEFAULTS TO TRUE for open groups — every open decision always
+     * offers a write-in unless a config opts out with `allowWriteIn: false`.
+     * Locked groups never get one (they are decided context); setting
+     * `allowWriteIn: true` on a locked group is a contradiction and is rejected.
+     */
+    allowWriteIn: z.boolean().optional(),
     options: z.array(Option).min(1).max(6),
   })
   .superRefine((g, ctx) => {
@@ -132,6 +140,11 @@ export const Group = z
       ctx.addIssue({
         code: "custom",
         message: `locked group "${g.id}" needs a recommended option to hold its fixed pick`,
+      });
+    if (g.locked && g.allowWriteIn === true)
+      ctx.addIssue({
+        code: "custom",
+        message: `locked group "${g.id}" cannot allow a write-in (locked groups are decided context)`,
       });
   });
 export type TGroup = z.infer<typeof Group>;
@@ -194,12 +207,19 @@ export function validateConfig(cfg: Config): string[] {
   for (const g of cfg.groups) {
     if (groupIds.has(g.id)) errs.push(`duplicate group id: "${g.id}"`);
     groupIds.add(g.id);
+    // "~" leads the internal selection-state namespace (e.g. the per-group
+    // write-in keys core stores as "~writeIn:<groupId>") — a group id there
+    // would collide with that state.
+    if (g.id.startsWith("~"))
+      errs.push(`group id "${g.id}" must not start with "~" (reserved for internal selection-state keys)`);
     if (!g.locked && g.options.length < 2)
       errs.push(
         `group "${g.id}" has ${g.options.length} option(s) — open groups need at least 2 (or set locked: true)`,
       );
     if (g.locked && !g.options.some((o) => o.recommended))
       errs.push(`locked group "${g.id}" needs a recommended option to hold its fixed pick`);
+    if (g.locked && g.allowWriteIn === true)
+      errs.push(`locked group "${g.id}" cannot allow a write-in (locked groups are decided context)`);
     const optIds = new Set<string>();
     for (const o of g.options) {
       if (optIds.has(o.id))
