@@ -170,9 +170,31 @@ detail or shows letterboxing, adjust that option's `{x,y,w,h}` in
 intended subject. (The crop math fills the tile at any aspect ratio given
 correct intrinsic dims — letterboxing means the dims or the rect are wrong.)
 
-### 5. Export the brief
+### 5. Hand off the brief
 
-The export brief is the deterministic handoff. Pull both forms from core:
+The deterministic handoff is a **capture server** — no copy-paste. `serveCapture`
+from the generator serves the `dist/` artifact on loopback, reveals a **"Hand off
+& continue"** button, and the instant a human clicks it, writes
+`.loupe/<name>.brief.{json,md}` and resolves — so an agent can `await` the lock and
+continue on its own:
+
+```sh
+tsx -e "import('@lucentive-labs/loupe-generator').then(async g=>{const s=await g.serveCapture({artifactDir:'dist',name:'brand'});console.log('open + lock your picks:',s.url);const b=await s.lock;console.log('brief written →',b.jsonPath);await s.close();})"
+```
+
+- Open the printed `http://127.0.0.1:…` URL, lock the picks, click **Hand off & continue**.
+- On lock, `.loupe/brand.brief.json` (machine-readable) + `.loupe/brand.brief.md` are
+  written and the call resolves with `{ markdown, json, jsonPath, mdPath }`.
+- **Agent loop (no paste-back):** run the server, open `s.url` for the human (browser
+  tool / `open`), then either `await s.lock` in the same process or watch
+  `.loupe/<name>.brief.json` — read it and continue the build pass. The JSON is the
+  same payload as `selectExportBrief`.
+- Loopback-only, and a per-server token gates the POST so no other local process can
+  spoof the hand-off. Served as a plain `file://` (no server), the artifact hides the
+  hand-off button and falls back to a **Copy brief** button + textarea.
+
+**Fallback — pull the brief directly** (CI / no browser / just take the recommended
+defaults):
 
 ```sh
 tsx -e "Promise.all([import('@lucentive-labs/loupe-core'),import('@lucentive-labs/loupe-schema'),import('./loupe.config.ts')]).then(([core,schema,m])=>{const cfg=schema.parseConfig(m.config);const sel=core.recommendedSelections(cfg);const b=core.selectExportBrief(cfg,sel);console.log(b.markdown);console.log('\n---JSON---\n'+JSON.stringify(b.json,null,2));})"
@@ -180,10 +202,6 @@ tsx -e "Promise.all([import('@lucentive-labs/loupe-core'),import('@lucentive-lab
 
 - `markdown`: resolved direction, locked decisions, banned list, workflow.
 - `json`: machine-readable locks + decisions + banned, for the build pass.
-
-In the running artifact the **Copy brief** button copies the same markdown, and
-the textarea always holds the current brief. Hand the brief to the production
-pass as ground truth.
 
 ## Notes
 
