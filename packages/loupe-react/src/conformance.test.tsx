@@ -186,12 +186,16 @@ describe("loupe-react ⇄ loupe-dom structural parity", () => {
     expect([...reactG].sort()).toEqual([...domG].sort());
   });
 
-  it("renders the composed-preview, picks, and export-brief landmarks", () => {
+  it("renders the composed-preview, picks, and v2.1 export-brief landmarks", () => {
     for (const marker of [
-      'data-loupe-preview',
-      'data-loupe-thumbs',
+      "data-loupe-preview",
+      "data-loupe-thumbs",
       'id="loupe-brief"',
-      'data-loupe-brief',
+      "data-loupe-brief", // raw markdown textarea
+      "data-loupe-brief-summary", // structured decisions rows (v2.1)
+      "data-loupe-handoff", // file-based hand-off action (v2.1)
+      "loupe-export__raw", // collapsed raw-brief details (v2.1)
+      "loupe-brief__row", // at least one decision row
     ]) {
       expect(reactHtml).toContain(marker);
       expect(domHtml).toContain(marker);
@@ -216,6 +220,74 @@ describe("loupe-react ⇄ loupe-dom structural parity", () => {
     ]) {
       expect(domHtml).toContain(marker);
       expect(reactHtml).toContain(marker);
+    }
+  });
+});
+
+// The guided "flow" stepper (the default layout) must also match loupe-dom. Both
+// render every step's tiles up front (inactive steps are inert), so the option /
+// group / checked sets are identical to the page layout — plus the flow shell.
+const cfgFlow = { ...cfg, layout: "flow" as const };
+const domFlow = renderToString(cfgFlow, sel);
+const reactFlow = renderToStaticMarkup(<Loupe config={cfgFlow} />);
+
+describe("loupe-react ⇄ loupe-dom flow-layout parity", () => {
+  it("both render the flow shell (root · rail · stage · nav)", () => {
+    for (const marker of [
+      "loupe--flow",
+      "data-loupe-flow",
+      "data-loupe-rail",
+      "loupe-flow__stage",
+      'data-loupe-nav="back"',
+      'data-loupe-nav="next"',
+      'data-step="0"',
+    ]) {
+      expect(domFlow).toContain(marker);
+      expect(reactFlow).toContain(marker);
+    }
+  });
+
+  it("equal rail steps and stage steps (one per group + review)", () => {
+    const expected = cfg.groups.length + 1;
+    expect(attrValues(domFlow, "data-loupe-rail-step").length).toBe(expected);
+    expect(attrValues(reactFlow, "data-loupe-rail-step").length).toBe(expected);
+    expect(attrValues(domFlow, "data-loupe-step").length).toBe(expected);
+    expect(attrValues(reactFlow, "data-loupe-step").length).toBe(expected);
+  });
+
+  it("exactly one active step at step 0 (aria-current=step)", () => {
+    expect(countAttr(domFlow, "aria-current", "step")).toBe(1);
+    expect(countAttr(reactFlow, "aria-current", "step")).toBe(1);
+  });
+
+  it("all option tiles still present across steps (radios)", () => {
+    const totalOptions = cfg.groups.reduce((n, g) => n + g.options.length, 0);
+    expect(countAttr(domFlow, "role", "radio")).toBe(totalOptions);
+    expect(countAttr(reactFlow, "role", "radio")).toBe(totalOptions);
+  });
+
+  it("identical data-option ids and aria-checked set in flow", () => {
+    expect([...new Set(attrValues(reactFlow, "data-option"))].sort()).toEqual(
+      [...new Set(attrValues(domFlow, "data-option"))].sort(),
+    );
+    expect([...checkedOptionIds(reactFlow)].sort()).toEqual(
+      [...checkedOptionIds(domFlow)].sort(),
+    );
+  });
+
+  it("review step carries the composed-preview + full v2.1 export-brief", () => {
+    for (const marker of [
+      "loupe-review",
+      "data-loupe-preview",
+      'id="loupe-brief"',
+      "data-loupe-brief",
+      "data-loupe-brief-summary",
+      "data-loupe-handoff",
+      "loupe-export__raw",
+      "loupe-brief__row",
+    ]) {
+      expect(domFlow).toContain(marker);
+      expect(reactFlow).toContain(marker);
     }
   });
 });
