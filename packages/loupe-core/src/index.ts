@@ -354,11 +354,12 @@ const round = (n: number) => {
  * Theming — semantic token contract → CSS variables (`--loupe-*`)
  * ------------------------------------------------------------------ */
 
-export const DEFAULT_TOKENS: TThemeTokens = {
-  // Neutral "graphite" default: unbranded, calm, and deliberately NOT teal/green,
-  // so an unthemed artifact imposes no palette and any project theme reads clean
-  // on top of it. Low-chroma slate accent keeps color-signal in contrast with the
-  // near-black color-primary (Recommended button / pill number render one on the other).
+/**
+ * Neutral "graphite" preset — unbranded, calm, deliberately NOT teal/green, so a
+ * project theme reads clean on top. This was the default through v2.0; pass it as
+ * `config.theme` (or `THEME_PRESETS.neutral`) when you want a blank canvas.
+ */
+export const NEUTRAL_TOKENS: TThemeTokens = {
   "color-bg": "oklch(98.5% 0.003 255)",
   "color-surface": "oklch(99.4% 0.002 255)",
   "color-fg": "oklch(22% 0.014 260)",
@@ -369,6 +370,7 @@ export const DEFAULT_TOKENS: TThemeTokens = {
   "color-ring": "oklch(70% 0.10 258)",
   "color-danger": "oklch(55% 0.16 25)",
   "color-signal": "oklch(80% 0.10 258)",
+  "color-signal-fg": "oklch(22% 0.014 260)",
   "radius-sm": "8px",
   "radius-md": "14px",
   "radius-lg": "20px",
@@ -385,6 +387,47 @@ export const DEFAULT_TOKENS: TThemeTokens = {
   "duration-slow": "5000ms",
   "shadow-md": "0 12px 30px -18px rgba(16,24,32,0.5)",
 };
+
+/**
+ * DEFAULT — the "Night Atlas" standard look every unthemed artifact wears out of
+ * the box: deep teal-black ground, ivory ink, luminous turquoise accent, with a
+ * distinct lighter-turquoise signal so done-state and the count badge stay legible.
+ * A project's own `config.theme` still overrides this per-project.
+ */
+export const DEFAULT_TOKENS: TThemeTokens = {
+  "color-bg": "#0c1a1c",
+  "color-surface": "#11201e",
+  "color-fg": "#e7ece9",
+  "color-fg-muted": "#9fb2ac",
+  "color-primary": "#2fd4c4",
+  "color-primary-fg": "#04211d",
+  "color-border": "#22403b",
+  "color-ring": "#2fd4c4",
+  "color-danger": "#ff7a6b",
+  "color-signal": "#7ee7db",
+  "color-signal-fg": "#04211d",
+  "radius-sm": "8px",
+  "radius-md": "14px",
+  "radius-lg": "20px",
+  "space-1": "0.25rem",
+  "space-2": "0.5rem",
+  "space-3": "0.75rem",
+  "space-4": "1rem",
+  "space-5": "1.5rem",
+  "space-6": "2.5rem",
+  "font-sans": "'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif",
+  "font-serif": "Georgia, 'Times New Roman', serif",
+  "font-mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
+  "ease-out": "cubic-bezier(0.22, 1, 0.36, 1)",
+  "duration-slow": "5000ms",
+  "shadow-md": "0 18px 40px -22px rgba(0,0,0,0.7)",
+};
+
+/** Named theme presets shipped for quick, on-brand theming. */
+export const THEME_PRESETS = {
+  nightAtlas: DEFAULT_TOKENS,
+  neutral: NEUTRAL_TOKENS,
+} as const;
 
 /** A safe kebab custom-property ident (nothing that could escape the var name). */
 const SAFE_TOKEN_KEY = /^[a-zA-Z0-9-]+$/;

@@ -6,16 +6,19 @@
  */
 
 :root {
-  --loupe-color-bg: oklch(98.5% 0.003 255);
-  --loupe-color-surface: oklch(99.4% 0.002 255);
-  --loupe-color-fg: oklch(22% 0.014 260);
-  --loupe-color-fg-muted: oklch(52% 0.014 260);
-  --loupe-color-primary: oklch(22% 0.014 260);
-  --loupe-color-primary-fg: oklch(99% 0.003 255);
-  --loupe-color-border: oklch(90% 0.006 255);
-  --loupe-color-ring: oklch(70% 0.10 258);
-  --loupe-color-danger: oklch(55% 0.16 25);
-  --loupe-color-signal: oklch(80% 0.10 258);
+  /* Mirrors loupe-core DEFAULT_TOKENS ("Night Atlas"). applyTheme() /
+     tokensToCssText override these per-instance for a project theme. */
+  --loupe-color-bg: #0c1a1c;
+  --loupe-color-surface: #11201e;
+  --loupe-color-fg: #e7ece9;
+  --loupe-color-fg-muted: #9fb2ac;
+  --loupe-color-primary: #2fd4c4;
+  --loupe-color-primary-fg: #04211d;
+  --loupe-color-border: #22403b;
+  --loupe-color-ring: #2fd4c4;
+  --loupe-color-danger: #ff7a6b;
+  --loupe-color-signal: #7ee7db;
+  --loupe-color-signal-fg: #04211d;
   --loupe-radius-sm: 8px;
   --loupe-radius-md: 14px;
   --loupe-radius-lg: 20px;
@@ -25,12 +28,12 @@
   --loupe-space-4: 1rem;
   --loupe-space-5: 1.5rem;
   --loupe-space-6: 2.5rem;
-  --loupe-font-sans: Manrope, ui-sans-serif, system-ui, sans-serif;
+  --loupe-font-sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --loupe-font-serif: Georgia, "Times New Roman", serif;
-  --loupe-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --loupe-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --loupe-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --loupe-duration-slow: 5000ms;
-  --loupe-shadow-md: 0 12px 30px -18px rgba(16, 24, 32, 0.5);
+  --loupe-shadow-md: 0 18px 40px -22px rgba(0, 0, 0, 0.7);
 }
 
 .loupe,
@@ -107,7 +110,9 @@
   height: 1.5rem;
   padding: 0 0.35rem;
   border-radius: 999px;
-  background: var(--loupe-color-signal);
+  /* Inverse of the pill (primary bg) so the count is legible on ANY theme —
+     never depends on color-signal contrasting with color-primary. */
+  background: var(--loupe-color-primary-fg);
   color: var(--loupe-color-primary);
   font-weight: 800;
 }
@@ -435,6 +440,45 @@
   background: var(--loupe-color-signal);
   box-shadow: 0 0 8px color-mix(in srgb, var(--loupe-color-signal) 70%, transparent);
   opacity: 0.85;
+}
+
+/* Asset-free motion previews — themed CSS-only stand-ins, so a token-only
+   config never renders an empty/broken-looking crop for a motion tile. */
+.loupe-motion--stub {
+  background:
+    radial-gradient(130% 120% at 50% -10%, color-mix(in srgb, var(--loupe-color-signal) 16%, transparent), transparent 72%),
+    var(--loupe-color-surface);
+}
+.loupe-motion--stub::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.loupe-motion--breathe.loupe-motion--stub::after {
+  margin: auto;
+  width: 42%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--loupe-color-signal) 60%, transparent);
+}
+.loupe-motion--pan.loupe-motion--stub::after {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--loupe-color-signal) 60%, transparent) 50%, transparent);
+  background-size: 55% 100%;
+  background-repeat: no-repeat;
+  background-position: 50% 0;
+}
+.loupe-motion--field.loupe-motion--stub::after {
+  background-image: radial-gradient(color-mix(in srgb, var(--loupe-color-signal) 75%, transparent) 1.6px, transparent 1.7px);
+  background-size: 22px 22px;
+  opacity: 0.6;
+}
+@keyframes loupe-mo-breathe { 0%, 100% { transform: scale(0.72); opacity: 0.45; } 50% { transform: scale(1.02); opacity: 0.8; } }
+@keyframes loupe-mo-pan { from { background-position: -30% 0; } to { background-position: 130% 0; } }
+@keyframes loupe-mo-field { from { background-position: 0 0; } to { background-position: 22px 22px; } }
+@media (prefers-reduced-motion: no-preference) {
+  .loupe-motion--breathe.loupe-motion--stub::after { animation: loupe-mo-breathe 3.8s ease-in-out infinite; transform-origin: center; }
+  .loupe-motion--pan.loupe-motion--stub::after { animation: loupe-mo-pan 3s linear infinite; }
+  .loupe-motion--field.loupe-motion--stub::after { animation: loupe-mo-field 7s linear infinite; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -848,25 +892,30 @@
 .loupe-btn:active {
   transform: translateY(1px);
 }
-.loupe-btn--primary {
+/* `.loupe-btn.` prefix raises specificity to (0,2,0) so the label color beats
+   the `.loupe button { color: inherit }` reset (0,1,1) — otherwise primary/
+   signal buttons inherit color-fg and go low-contrast or invisible on accent. */
+.loupe-btn.loupe-btn--primary {
   background: var(--loupe-color-primary);
   color: var(--loupe-color-primary-fg);
 }
 .loupe-btn--primary:hover {
   background: color-mix(in srgb, var(--loupe-color-primary) 88%, black);
 }
-.loupe-btn--ghost {
+.loupe-btn.loupe-btn--ghost {
   background: transparent;
   border-color: var(--loupe-color-border);
   color: var(--loupe-color-fg-muted);
 }
-.loupe-btn--ghost:hover {
+.loupe-btn.loupe-btn--ghost:hover {
   border-color: var(--loupe-color-fg-muted);
   color: var(--loupe-color-fg);
 }
-.loupe-btn--signal {
+.loupe-btn.loupe-btn--signal {
   background: var(--loupe-color-signal);
-  color: var(--loupe-color-primary);
+  /* signal-fg (not primary): color-signal can sit close to color-primary in a
+     theme, which made the label near-invisible on the accent. */
+  color: var(--loupe-color-signal-fg);
 }
 .loupe-btn--signal:hover {
   background: color-mix(in srgb, var(--loupe-color-signal) 86%, black);
@@ -915,7 +964,7 @@
 }
 .loupe-export__brief {
   width: 100%;
-  min-height: 460px;
+  min-height: 240px;
   resize: vertical;
   border: 1px solid var(--loupe-color-border);
   border-radius: var(--loupe-radius-md);
@@ -925,6 +974,103 @@
   line-height: 1.55;
   font-size: 0.85rem;
   font-family: var(--loupe-font-mono);
+}
+
+/* Structured, human-readable brief (the review summary). The raw markdown for
+   the build pass lives in a collapsed <details> below, so it never overwhelms. */
+.loupe-brief {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+}
+.loupe-brief__row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 30%) 1fr;
+  gap: 0.3rem 1.1rem;
+  align-items: baseline;
+  padding: 0.72rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--loupe-color-border) 55%, transparent);
+}
+.loupe-brief__row:first-child {
+  border-top: 0;
+}
+.loupe-brief__q {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--loupe-color-fg-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.loupe-brief__a {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--loupe-color-fg);
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.6rem;
+}
+.loupe-brief__a--open {
+  color: var(--loupe-color-fg-muted);
+  font-weight: 500;
+}
+.loupe-brief__a--writein {
+  font-style: italic;
+}
+.loupe-brief__dev {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--loupe-color-fg);
+  background: color-mix(in srgb, var(--loupe-color-signal) 24%, transparent);
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+}
+.loupe-brief__flags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.loupe-brief__flags span {
+  font-size: 0.66rem;
+  font-family: var(--loupe-font-mono);
+  color: var(--loupe-color-fg-muted);
+  border: 1px solid var(--loupe-color-border);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+}
+.loupe-brief__note {
+  grid-column: 2;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--loupe-color-fg-muted);
+}
+.loupe-brief__lock {
+  display: inline-flex;
+  opacity: 0.55;
+}
+.loupe-brief__lock svg {
+  width: 12px;
+  height: 12px;
+}
+.loupe-export__raw {
+  margin-top: 1.4rem;
+}
+.loupe-export__raw-toggle {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--loupe-color-fg-muted);
+  padding: 0.4rem 0;
+  user-select: none;
+}
+.loupe-export__raw-toggle:hover {
+  color: var(--loupe-color-fg);
+}
+.loupe-export__raw[open] .loupe-export__brief {
+  margin-top: 0.6rem;
 }
 
 /* ---------------- Workflow + banned ---------------- */

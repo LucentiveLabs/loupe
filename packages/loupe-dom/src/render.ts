@@ -133,6 +133,19 @@ export function renderSpecimen(config: Config, spec: TSpecimen, alt: string): st
       return `<div class="loupe-type" style="font-family:${family};font-weight:${weight}">${kicker}<span class="loupe-type__sample">${escapeHtml(spec.sample)}</span></div>`;
     }
     case "motion": {
+      // Whitelist preset → class; never interpolate the raw preset into the
+      // class attribute (a JS caller could pass an unparsed/hostile config).
+      const motionClass =
+        spec.preset === "pan"
+          ? "loupe-motion--pan"
+          : spec.preset === "field"
+            ? "loupe-motion--field"
+            : "loupe-motion--breathe";
+      // Asset-free configs (token-only brand systems) have no image to crop —
+      // render a themed, CSS-only motion preview, not an empty crop placeholder.
+      if (!spec.asset) {
+        return `<div class="loupe-crop loupe-motion ${motionClass} loupe-motion--stub" role="img" aria-label="motion preview"></div>`;
+      }
       const img = cropImg(config, spec.asset, spec.crop, alt);
       if (spec.preset === "pan") {
         const img2 = cropImg(config, spec.asset2 ?? spec.asset, spec.crop2 ?? spec.crop, alt, "loupe-motion__b");
@@ -295,7 +308,7 @@ function thumbStyle(config: Config, option: TOption | null): { style: string; gl
   return { style: "", glyph: "" };
 }
 
-function renderThumbs(config: Config, sel: Selections): string {
+export function renderThumbs(config: Config, sel: Selections): string {
   const cells = config.groups
     .map((g) => {
       const o = selectedOption(g, sel);
@@ -364,7 +377,13 @@ export function renderComposedPreview(config: Config, sel: Selections): string {
   const headline = model.headline
     ? `<div class="loupe-pv__heading"><span class="loupe-pv__heading-k">${escapeHtml(config.title ?? "Preview")}</span><span class="loupe-pv__heading-h">${escapeHtml(model.headline)}</span></div>`
     : "";
-  const bands = model.bands.map((b) => renderPreviewBand(config, b)).join("");
+  // Drop only the headline SOURCE band (its group feeds the hero heading above),
+  // not any band whose text merely coincides with the headline string.
+  const headlineFrom = config.preview?.headlineFrom;
+  const bands = model.bands
+    .filter((b) => !(model.headline && headlineFrom && b.group.id === headlineFrom))
+    .map((b) => renderPreviewBand(config, b))
+    .join("");
   return `<div class="loupe-pv" data-loupe-preview><div class="loupe-pv__frame">${headline}${bands}</div></div>`;
 }
 
@@ -405,9 +424,43 @@ export function renderStack(config: Config, sel: Selections): string {
 </aside>`;
 }
 
+/**
+ * The structured decision rows for the review summary. Exported so the mount can
+ * patch them live during write-in typing without a full re-render.
+ */
+export function renderBriefRows(config: Config, sel: Selections): string {
+  const decisions = (selectExportBrief(config, sel).json.decisions ?? []) as Array<{
+    title: string;
+    label: string | null;
+    locked: boolean;
+    flags: string[];
+    deviation: boolean;
+    writeIn: string | null;
+  }>;
+  return decisions
+    .map((d) => {
+      const open = !d.label && !d.writeIn;
+      const answer = d.label
+        ? escapeHtml(d.label)
+        : d.writeIn
+          ? `&ldquo;${escapeHtml(d.writeIn)}&rdquo;`
+          : "(open)";
+      const acls = d.label ? "" : d.writeIn ? " loupe-brief__a--writein" : " loupe-brief__a--open";
+      const dev = d.deviation ? `<span class="loupe-brief__dev">changed</span>` : "";
+      const flags = d.flags.length
+        ? `<span class="loupe-brief__flags">${d.flags.map((f) => `<span>${escapeHtml(f)}</span>`).join("")}</span>`
+        : "";
+      const note = d.label && d.writeIn ? `<span class="loupe-brief__note">note: &ldquo;${escapeHtml(d.writeIn)}&rdquo;</span>` : "";
+      const lock = d.locked ? `<span class="loupe-brief__lock" title="Locked">${LOCK_SVG}</span>` : "";
+      return `<li class="loupe-brief__row"${open ? ' data-open="true"' : ""}><span class="loupe-brief__q">${escapeHtml(d.title)}${lock}</span><span class="loupe-brief__a${acls}">${answer}${dev}${flags}</span>${note}</li>`;
+    })
+    .join("");
+}
+
 /** The secondary export-brief section from `selectExportBrief`. */
 export function renderExportBrief(config: Config, sel: Selections): string {
   const brief = selectExportBrief(config, sel);
+  const rows = renderBriefRows(config, sel);
   const banned = config.banned?.length
     ? `<section class="loupe-banned" id="loupe-banned">
       <h3 class="loupe-banned__title">Banned</h3>
@@ -422,18 +475,22 @@ export function renderExportBrief(config: Config, sel: Selections): string {
     : "";
   return `<section class="loupe-export" id="loupe-brief">
   <div class="loupe-export__head">
-    <h2 class="loupe-export__title">Build brief</h2>
-    <p class="loupe-export__lead">The deterministic handoff for the next build pass. Stays in sync with your locked tiles.</p>
+    <h2 class="loupe-export__title">Review &amp; hand off</h2>
+    <p class="loupe-export__lead">Confirm your decisions, then hand them to the build pass.</p>
     <div class="loupe-export__actions">
-      <button type="button" class="loupe-btn loupe-btn--signal loupe-handoff" data-loupe-handoff>Hand off &amp; continue</button>
+      <button type="button" class="loupe-btn loupe-btn--signal loupe-handoff" data-loupe-handoff>Hand off &amp; continue →</button>
       <button type="button" class="loupe-btn loupe-btn--primary" data-loupe-copy>Copy brief</button>
-      <button type="button" class="loupe-btn loupe-btn--ghost" data-loupe-reset>Reset decisions</button>
+      <button type="button" class="loupe-btn loupe-btn--ghost" data-loupe-reset>Reset</button>
     </div>
     <p class="loupe-export__status" data-loupe-status aria-live="polite"></p>
   </div>
-  <textarea class="loupe-export__brief" data-loupe-brief spellcheck="false" aria-label="Generated build brief">${escapeHtml(brief.markdown)}</textarea>
+  <ol class="loupe-brief" data-loupe-brief-summary>${rows}</ol>
   ${workflow}
   ${banned}
+  <details class="loupe-export__raw">
+    <summary class="loupe-export__raw-toggle">Raw brief · markdown for the build pass</summary>
+    <textarea class="loupe-export__brief" data-loupe-brief spellcheck="false" aria-label="Generated build brief">${escapeHtml(brief.markdown)}</textarea>
+  </details>
 </section>`;
 }
 

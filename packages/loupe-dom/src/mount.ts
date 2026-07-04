@@ -11,9 +11,11 @@ import {
   resolveKeydown,
   rovingId,
   selectExportBrief,
+  selectProgress,
+  selectedWriteIn,
   tokensToCssVars,
 } from "@lucentive-labs/loupe-core";
-import { renderApp } from "./render.js";
+import { renderApp, renderBriefRows, renderComposedPreview, renderThumbs } from "./render.js";
 
 export interface MountOptions {
   /** Initial selections (overrides storage + recommended). */
@@ -81,8 +83,13 @@ export function mount(
   // Flow-layout step index (ignored by page layout); survives store re-renders.
   let step = 0;
   const stepCount = config.groups.length + 1; // groups + review
+  // While a write-in input is being typed, skip the full innerHTML re-render
+  // (which destroys + rebuilds the input and flickers the screen). We patch
+  // only the derived live bits instead — see onInput + patchLive below.
+  let suppressRender = false;
 
   const render = () => {
+    if (suppressRender) return;
     const sel = store.getSnapshot();
     // Preserve focus across re-render by remembering the active tile address —
     // or, for a write-in input, its group + caret (typing commits per input
@@ -124,6 +131,46 @@ export function mount(
 
   const cssEscape = (s: string): string =>
     typeof CSS !== "undefined" && CSS.escape ? CSS.escape(s) : s.replace(/["\\]/g, "\\$&");
+
+  // Surgical update for write-in typing: refresh only the progress count + rail
+  // done-state (the composed preview + brief rebuild on the next step change),
+  // so the focused input is never re-created and the screen doesn't flicker.
+  const patchLive = (): void => {
+    const sel = store.getSnapshot();
+    const locked = String(selectProgress(config, sel).locked);
+    // every progress counter (the page layout has several)
+    el.querySelectorAll<HTMLElement>("[data-loupe-progress]").forEach((n) => {
+      n.textContent = locked;
+    });
+    // rail done-state (flow layout)
+    const railSteps = el.querySelectorAll<HTMLElement>("[data-loupe-rail-step]");
+    config.groups.forEach((g, i) => {
+      const decided = sel[g.id] !== undefined || selectedWriteIn(g, sel) !== "";
+      railSteps[i]?.classList.toggle("is-done", decided);
+      // the group's Clear button is `hidden` until the group is decided
+      const clearBtn = el.querySelector<HTMLButtonElement>(`[data-loupe-clear="${cssEscape(g.id)}"]`);
+      if (clearBtn) clearBtn.hidden = !decided;
+    });
+    // composed preview(s) + thumbs + brief — everything a write-in changes, and
+    // all live in the page layout — patched in place so the focused input is
+    // never re-created (no flicker) and nothing goes stale.
+    el.querySelectorAll<HTMLElement>("[data-loupe-preview]").forEach((n) => {
+      n.outerHTML = renderComposedPreview(config, sel);
+    });
+    const thumbs = el.querySelector<HTMLElement>("[data-loupe-thumbs-wrap]");
+    if (thumbs) thumbs.innerHTML = renderThumbs(config, sel);
+    const brief = el.querySelector<HTMLTextAreaElement>("[data-loupe-brief]");
+    if (brief && brief !== document.activeElement) brief.value = selectExportBrief(config, sel).markdown;
+    const summary = el.querySelector<HTMLElement>("[data-loupe-brief-summary]");
+    if (summary) summary.innerHTML = renderBriefRows(config, sel);
+  };
+
+  // Reveal + select the (now collapsible) raw brief for the manual copy fallback.
+  const selectBrief = (ta: HTMLTextAreaElement | null): void => {
+    if (!ta) return;
+    ta.closest("details")?.setAttribute("open", "");
+    ta.select();
+  };
 
   // ---- Event delegation on the host element ----
   const onClick = (ev: MouseEvent) => {
@@ -209,12 +256,12 @@ export function mount(
             navigator.clipboard.writeText(b.markdown).then(
               () => flash(status, "No capture server — brief copied instead.", timers),
               () => {
-                ta?.select();
+                selectBrief(ta);
                 flash(status, "Select the brief below and copy to hand off.", timers);
               },
             );
           } else {
-            ta?.select();
+            selectBrief(ta);
             flash(status, "Select the brief below and copy to hand off.", timers);
           }
         });
@@ -228,12 +275,12 @@ export function mount(
         navigator.clipboard.writeText(brief).then(
           () => flash(status, "Brief copied.", timers),
           () => {
-            ta?.select();
+            selectBrief(ta);
             flash(status, "Selected — press Cmd/Ctrl+C.", timers);
           },
         );
       } else {
-        ta?.select();
+        selectBrief(ta);
         flash(status, "Selected — press Cmd/Ctrl+C.", timers);
       }
       return;
@@ -254,7 +301,15 @@ export function mount(
     const input = target?.closest<HTMLInputElement>("[data-loupe-writein]");
     if (!input) return;
     const g = input.getAttribute("data-loupe-writein");
-    if (g) store.writeIn(g, input.value);
+    if (!g) return;
+    // Commit the value but suppress the full re-render so the input keeps focus
+    // and the screen doesn't flicker; patch only the live-derived bits.
+    suppressRender = true;
+    store.writeIn(g, input.value);
+    suppressRender = false;
+    // reflect filled/empty on the focused input itself (no re-render)
+    input.dataset.state = input.value.trim() === "" ? "empty" : "filled";
+    patchLive();
   };
 
   const onKeydown = (ev: KeyboardEvent) => {
