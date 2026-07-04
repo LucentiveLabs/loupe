@@ -1,0 +1,24 @@
+# Baseline gitleaks config for the security gate.
+# Copy to a repo root as `.gitleaks.toml` (gitleaks auto-loads it) OR pass via
+# --config. Extends gitleaks' default ruleset and adds a tight false-positive
+# allowlist. Keep the allowlist NARROW — only patterns proven safe — so real
+# secrets are never suppressed.
+title = "security-gate baseline"
+
+[extend]
+useDefault = true
+
+# curl / HTTP basic-auth where the credential is a shell/env variable, e.g.
+#   curl -u "$STRIPE_SK:"   curl -u "${TOKEN}:"
+# The secret is injected from the environment (op:// / CI secret), never a
+# committed literal, so this is a false positive for the curl-auth-user rule.
+[[allowlists]]
+description = "curl basic-auth via env/shell variable (not a literal secret)"
+regexTarget = "line"
+regexes = ['''-u\s+["']?\$\{?[A-Za-z_][A-Za-z0-9_]*\}?:?["']?''']
+
+# NO directory-wide fixture/scratch allowlist: a broad path allow could hide a
+# REAL committed secret. Full mode scans git history (gitignored scratch/ never
+# appears there), so it isn't needed. A repo with deliberate synthetic-secret
+# fixtures should ship its own .gitleaks.toml with exact fingerprints/regexes for
+# those specific fake values rather than allowlisting whole directories.

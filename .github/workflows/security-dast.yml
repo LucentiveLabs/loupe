@@ -1,0 +1,25 @@
+# Scheduled PASSIVE DAST of the live domain where Loupe is published
+# (needs scripts/security-dast.sh present). Passive-only: response
+# security-header + TLS checks (curl/openssl, always available on the runner).
+# nuclei's safe templates run too when the binary is present locally; CI stays
+# header/TLS to avoid an unpinned installer. Active fuzzing (ZAP) belongs on
+# staging, not this job.
+name: security-dast
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1" # weekly Mon 07:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  dast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Passive DAST probe (security headers + TLS)
+        run: |
+          chmod +x scripts/security-dast.sh
+          scripts/security-dast.sh
