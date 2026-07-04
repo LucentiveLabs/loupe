@@ -164,8 +164,6 @@ function PaletteSwatches({ colors }: { colors: string[] }): ReactNode {
   );
 }
 
-const reduceMotion = "(prefers-reduced-motion: reduce)";
-
 /** Render a single specimen's visual into a tile's media area. */
 function Specimen({
   config,
@@ -222,15 +220,14 @@ function Specimen({
     }
     case "motion": {
       // Motion presets are gated by prefers-reduced-motion in styles.css; the
-      // structure is identical to loupe-dom so the same rules apply. We render
-      // the same DOM regardless of the media query (CSS does the gating), and
-      // additionally annotate the reduced state for any JS-driven consumers.
+      // structure is identical to loupe-dom (no JS reduced-motion annotation, so
+      // SSR and client markup always match — CSS alone does the gating).
       const img = (
         <CropImg config={config} asset={spec.asset} crop={spec.crop} alt={alt} />
       );
       if (spec.preset === "pan") {
         return (
-          <div className="loupe-crop loupe-motion loupe-motion--pan" data-loupe-reduced={prefersReducedMotion() || undefined}>
+          <div className="loupe-crop loupe-motion loupe-motion--pan">
             <div className="loupe-motion__a">{img}</div>
             <div className="loupe-motion__b-wrap">
               <CropImg
@@ -247,7 +244,7 @@ function Specimen({
       if (spec.preset === "field") {
         const dots = ["left:24%;top:38%", "left:62%;top:30%", "left:48%;top:64%", "left:78%;top:58%"];
         return (
-          <div className="loupe-crop loupe-motion loupe-motion--field" data-loupe-reduced={prefersReducedMotion() || undefined}>
+          <div className="loupe-crop loupe-motion loupe-motion--field">
             {img}
             {dots.map((s, i) => (
               <span key={i} className="loupe-field-dot" style={styleFromText(s)} />
@@ -256,7 +253,7 @@ function Specimen({
         );
       }
       return (
-        <div className="loupe-crop loupe-motion loupe-motion--breathe" data-loupe-reduced={prefersReducedMotion() || undefined}>
+        <div className="loupe-crop loupe-motion loupe-motion--breathe">
           {img}
         </div>
       );
@@ -283,19 +280,6 @@ function Specimen({
       );
     default:
       return null;
-  }
-}
-
-/** True when the environment requests reduced motion (SSR-safe: false). */
-function prefersReducedMotion(): boolean {
-  try {
-    return (
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia(reduceMotion).matches
-    );
-  } catch {
-    return false;
   }
 }
 
@@ -911,6 +895,74 @@ function scrollToBrief(): void {
   document.getElementById("loupe-brief")?.scrollIntoView({ behavior: "smooth" });
 }
 
+const LockSvg = (): ReactNode => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V7a4 4 0 1 1 8 0v4" />
+  </svg>
+);
+
+/**
+ * Structured decision summary — mirrors loupe-dom's `renderBriefRows`: one row
+ * per decision (question + answer), with lock / deviation / flags / write-in note.
+ */
+function BriefRows({ config, sel }: { config: Config; sel: Selections }): ReactNode {
+  const decisions = (selectExportBrief(config, sel).json.decisions ?? []) as Array<{
+    title: string;
+    label: string | null;
+    locked: boolean;
+    flags: string[];
+    deviation: boolean;
+    writeIn: string | null;
+  }>;
+  return (
+    <>
+      {decisions.map((d, i) => {
+        const open = !d.label && !d.writeIn;
+        const acls = d.label ? "" : d.writeIn ? " loupe-brief__a--writein" : " loupe-brief__a--open";
+        return (
+          <li
+            key={i}
+            className="loupe-brief__row"
+            {...(open ? { "data-open": "true" } : {})}
+          >
+            <span className="loupe-brief__q">
+              {d.title}
+              {d.locked ? (
+                <span className="loupe-brief__lock" title="Locked">
+                  <LockSvg />
+                </span>
+              ) : null}
+            </span>
+            <span className={`loupe-brief__a${acls}`}>
+              {d.label ? d.label : d.writeIn ? `“${d.writeIn}”` : "(open)"}
+              {d.deviation ? <span className="loupe-brief__dev">changed</span> : null}
+              {d.flags.length ? (
+                <span className="loupe-brief__flags">
+                  {d.flags.map((f, j) => (
+                    <span key={j}>{f}</span>
+                  ))}
+                </span>
+              ) : null}
+            </span>
+            {d.label && d.writeIn ? (
+              <span className="loupe-brief__note">{`note: “${d.writeIn}”`}</span>
+            ) : null}
+          </li>
+        );
+      })}
+    </>
+  );
+}
+
 function ExportBrief({
   config,
   sel,
@@ -942,11 +994,19 @@ function ExportBrief({
   return (
     <section className="loupe-export" id="loupe-brief">
       <div className="loupe-export__head">
-        <h2 className="loupe-export__title">Build brief</h2>
+        <h2 className="loupe-export__title">{"Review & hand off"}</h2>
         <p className="loupe-export__lead">
-          The deterministic handoff for the next build pass. Stays in sync with your locked tiles.
+          Confirm your decisions, then hand them to the build pass.
         </p>
         <div className="loupe-export__actions">
+          <button
+            type="button"
+            className="loupe-btn loupe-btn--signal loupe-handoff"
+            data-loupe-handoff
+            onClick={onCopy}
+          >
+            {"Hand off & continue →"}
+          </button>
           <button type="button" className="loupe-btn loupe-btn--primary" data-loupe-copy onClick={onCopy}>
             Copy brief
           </button>
@@ -959,21 +1019,16 @@ function ExportBrief({
               onCopyStatus("Cleared to blank.");
             }}
           >
-            Reset decisions
+            Reset
           </button>
         </div>
         <p className="loupe-export__status" data-loupe-status aria-live="polite">
           {status}
         </p>
       </div>
-      <textarea
-        className="loupe-export__brief"
-        data-loupe-brief
-        spellCheck={false}
-        aria-label="Generated build brief"
-        readOnly
-        value={brief.markdown}
-      />
+      <ol className="loupe-brief" data-loupe-brief-summary>
+        <BriefRows config={config} sel={sel} />
+      </ol>
       {config.workflow?.length ? (
         <section className="loupe-workflow" id="loupe-workflow">
           <h3 className="loupe-workflow__title">Workflow</h3>
@@ -999,6 +1054,17 @@ function ExportBrief({
           </ul>
         </section>
       ) : null}
+      <details className="loupe-export__raw">
+        <summary className="loupe-export__raw-toggle">Raw brief · markdown for the build pass</summary>
+        <textarea
+          className="loupe-export__brief"
+          data-loupe-brief
+          spellCheck={false}
+          aria-label="Generated build brief"
+          readOnly
+          value={brief.markdown}
+        />
+      </details>
     </section>
   );
 }
@@ -1079,6 +1145,176 @@ export function useLoupe(config: Config, opts: UseLoupeOptions = {}): UseLoupeRe
  * <Loupe /> — the full interactive UI, a thin view over the store.
  * ------------------------------------------------------------------ */
 
+/**
+ * Guided flow stepper — one decision per screen + a final review / hand-off.
+ * Structurally equivalent to loupe-dom's `renderFlowApp` (same parts / classes /
+ * ARIA), so the shared `styles.css` `.loupe--flow` rules style it directly. Step
+ * index is local UI state (mirrors mount.ts's `let step`); selections stay in the
+ * shared store. All steps render (inactive ones `inert`/`aria-hidden`) so the
+ * structure — and thus renderer parity — matches at every step.
+ */
+function FlowApp({
+  config,
+  sel,
+  store,
+  status,
+  setStatus,
+  styleVars,
+  title,
+}: {
+  config: Config;
+  sel: Selections;
+  store: LoupeStore;
+  status: string;
+  setStatus: (msg: string) => void;
+  styleVars: CSSProperties;
+  title: string;
+}): ReactNode {
+  const groups = config.groups;
+  const groupCount = groups.length;
+  const stepCount = groupCount + 1; // groups + review
+  const [rawStep, setRawStep] = useState(0);
+  const step = Math.max(0, Math.min(rawStep, stepCount - 1));
+  const onReview = step === groupCount;
+  const { locked, total } = selectProgress(config, sel);
+  const goto = (i: number) => setRawStep(Math.max(0, Math.min(i, stepCount - 1)));
+
+  // On a step CHANGE (not initial mount), bring the active step into view and
+  // move focus into it — mirrors mount.ts's post-nav focus handling.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    const active = rootRef.current?.querySelector<HTMLElement>(".loupe-step.is-active");
+    active?.scrollIntoView({ block: "start" });
+    active
+      ?.querySelector<HTMLElement>('[data-loupe-part="tile"], button, textarea')
+      ?.focus();
+  }, [step]);
+
+  const nextLabel = step === groupCount - 1 ? "Review" : "Next";
+  const counter = onReview ? "Review & hand off" : `Question ${step + 1} of ${groupCount}`;
+
+  return (
+    <div
+      ref={rootRef}
+      className="loupe loupe-host loupe--flow"
+      data-loupe-root
+      data-loupe-flow=""
+      data-step={step}
+      style={styleVars}
+    >
+      <header className="loupe-flow__top">
+        <div className="loupe-flow__brand">{title}</div>
+        <nav className="loupe-rail" data-loupe-rail aria-label="Decision steps">
+          {groups.map((g, i) => {
+            const done = sel[g.id] !== undefined || selectedWriteIn(g, sel) !== "";
+            const active = i === step;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                className={`loupe-railstep${active ? " is-active" : ""}${done ? " is-done" : ""}`}
+                data-loupe-rail-step={i}
+                aria-current={active ? "step" : "false"}
+                aria-label={g.title}
+                onClick={() => goto(i)}
+              >
+                <span className="loupe-railstep__dot" aria-hidden="true" />
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className={`loupe-railstep loupe-railstep--review${onReview ? " is-active" : ""}`}
+            data-loupe-rail-step={groupCount}
+            aria-current={onReview ? "step" : "false"}
+            aria-label="Review and hand off"
+            onClick={() => goto(groupCount)}
+          >
+            <span className="loupe-railstep__dot" aria-hidden="true" />
+          </button>
+        </nav>
+        <span className="loupe-pill" aria-live="polite">
+          <b data-loupe-progress>{locked}</b> of {total} locked
+        </span>
+      </header>
+      <main className="loupe-flow__stage">
+        {groups.map((g, i) => {
+          const active = i === step;
+          return (
+            <section
+              key={g.id}
+              className={`loupe-step${active ? " is-active" : ""}`}
+              data-loupe-step={i}
+              aria-hidden={active ? "false" : "true"}
+              inert={active ? undefined : true}
+            >
+              <Group config={config} group={g} sel={sel} index={i} store={store} />
+            </section>
+          );
+        })}
+        <section
+          className={`loupe-step loupe-step--review${onReview ? " is-active" : ""}`}
+          data-loupe-step={groupCount}
+          aria-hidden={onReview ? "false" : "true"}
+          inert={onReview ? undefined : true}
+        >
+          <div className="loupe-review">
+            <div className="loupe-review__head">
+              <h2 className="loupe-review__title">{"Review & hand off"}</h2>
+              <p className="loupe-review__lead">
+                Everything you locked, composed. Hand the brief to the build pass.
+              </p>
+            </div>
+            <div className="loupe-review__grid">
+              <div className="loupe-review__preview">
+                <ComposedPreview config={config} sel={sel} />
+              </div>
+              <div className="loupe-review__brief">
+                <ExportBrief
+                  config={config}
+                  sel={sel}
+                  store={store}
+                  status={status}
+                  onCopyStatus={setStatus}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="loupe-flow__nav">
+        <button
+          type="button"
+          className="loupe-btn loupe-btn--ghost"
+          data-loupe-nav="back"
+          disabled={step === 0}
+          onClick={() => goto(step - 1)}
+        >
+          Back
+        </button>
+        <span className="loupe-flow__counter" aria-live="polite">
+          {counter}
+        </span>
+        {!onReview && (
+          <button
+            type="button"
+            className="loupe-btn loupe-btn--primary"
+            data-loupe-nav="next"
+            onClick={() => goto(step + 1)}
+          >
+            {nextLabel}
+          </button>
+        )}
+      </footer>
+    </div>
+  );
+}
+
 export interface LoupeProps {
   config: Config;
   /** Theme tokens applied as inline `--loupe-*` CSS vars on the root. */
@@ -1107,18 +1343,6 @@ export function Loupe({
 }: LoupeProps): ReactNode {
   const { store, selections } = useLoupe(config, { storageKey });
 
-  // The React adapter renders the "page" layout. The guided "flow" stepper (the
-  // generator/DOM default) is not implemented here yet, so warn — as a
-  // post-commit effect, not during render — whenever the effective layout is
-  // flow, including the omitted default. Pass layout:"page" to silence.
-  useEffect(() => {
-    if ((config.layout ?? "flow") === "flow") {
-      console.warn(
-        '[loupe] <Loupe> renders the "page" layout; the guided "flow" stepper is generator/DOM-only for now. Pass layout:"page" to silence this.',
-      );
-    }
-  }, [config.layout]);
-
   // Fire onLockChange after commit whenever the snapshot identity changes.
   const lastSel = useRef<Selections | null>(null);
   if (onLockChange && lastSel.current !== selections) {
@@ -1139,6 +1363,22 @@ export function Loupe({
   );
 
   const title = config.title ?? "Loupe decision lock";
+
+  // Guided stepper (the generator/DOM default) — one decision per screen + a
+  // final review. Structurally mirrors loupe-dom's renderFlowApp.
+  if ((config.layout ?? "flow") === "flow") {
+    return (
+      <FlowApp
+        config={config}
+        sel={selections}
+        store={store}
+        status={status}
+        setStatus={setStatus}
+        styleVars={styleVars}
+        title={title}
+      />
+    );
+  }
 
   return (
     <div className="loupe loupe-host" data-loupe-root style={styleVars}>
