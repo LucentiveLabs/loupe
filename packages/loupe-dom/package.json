@@ -1,7 +1,7 @@
 {
   "name": "@lucentive-labs/loupe-dom",
-  "version": "0.0.0",
-  "description": "Loupe browser renderer \u2014 mount(), renderToString(), crop engine, styles.css, applyTheme. Zero framework deps.",
+  "version": "0.1.0",
+  "description": "Loupe browser renderer — mount(), renderToString(), crop engine, styles.css, applyTheme. Zero framework deps.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://labs.lucentive.io/libraries/loupe",

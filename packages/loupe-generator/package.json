@@ -1,6 +1,6 @@
 {
   "name": "@lucentive-labs/loupe-generator",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Loupe static-HTML generator (Node-only): generate() bundles a self-contained index.html with JS + CSS inlined and assets copied.",
   "type": "module",
   "license": "MIT",
