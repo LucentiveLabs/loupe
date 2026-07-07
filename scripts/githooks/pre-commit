@@ -1,0 +1,4 @@
+#!/bin/sh
+# Pre-commit secrets gate: gitleaks staged scan. Blocks the commit on any
+# detected secret. The server-side CI security gate stays authoritative.
+exec scripts/security-scan.sh --mode staged
