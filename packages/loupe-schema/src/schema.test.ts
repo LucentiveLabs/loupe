@@ -120,6 +120,67 @@ describe("allowWriteIn (the 'something else' write-in contract)", () => {
   });
 });
 
+describe("editorial flow fields (question / promptLead / collapsible prompt)", () => {
+  const twoOptions = [
+    { id: "x", label: "X", specimen: { kind: "palette" as const, colors: ["#fff"] } },
+    { id: "y", label: "Y", specimen: { kind: "palette" as const, colors: ["#000"] } },
+  ];
+
+  it("parses question, promptLead, promptCollapsible, and promptSummary", () => {
+    const c = parseConfig({
+      version: 1,
+      question: "Which direction?",
+      assets: {},
+      groups: [
+        {
+          id: "g",
+          title: "G",
+          question: "Which palette carries the brand?",
+          prompt: "A long brief with all the context.",
+          promptLead: "Pick the palette that carries the brand.",
+          promptCollapsible: true,
+          promptSummary: "Read the full brief",
+          options: twoOptions,
+        },
+      ],
+    });
+    expect(c.question).toBe("Which direction?");
+    expect(c.groups[0]!.question).toBe("Which palette carries the brand?");
+    expect(c.groups[0]!.promptLead).toBe("Pick the palette that carries the brand.");
+    expect(c.groups[0]!.promptCollapsible).toBe(true);
+    expect(c.groups[0]!.promptSummary).toBe("Read the full brief");
+    expect(validateConfig(c)).toEqual([]);
+  });
+
+  it("rejects promptCollapsible without a prompt to collapse", () => {
+    expect(() =>
+      parseConfig({
+        version: 1,
+        assets: {},
+        groups: [{ id: "g", title: "G", promptCollapsible: true, options: twoOptions }],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects promptSummary without promptCollapsible", () => {
+    expect(() =>
+      parseConfig({
+        version: 1,
+        assets: {},
+        groups: [
+          {
+            id: "g",
+            title: "G",
+            prompt: "Some context.",
+            promptSummary: "Full context",
+            options: twoOptions,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+});
+
 describe("validateConfig preview refs", () => {
   it("flags a preview band that references a missing group", () => {
     const c = parseConfig({

@@ -423,10 +423,50 @@ export const DEFAULT_TOKENS: TThemeTokens = {
   "shadow-md": "0 18px 40px -22px rgba(0,0,0,0.7)",
 };
 
+/**
+ * EDITORIAL — a light "editor's desk" preset for content-forward reading flows:
+ * warm paper ground, near-black ink, a restrained bookish blue accent, and a
+ * serif display voice for the step questions. Uses system font stacks only, so
+ * artifacts stay self-contained (no webfont fetches). Introduces the optional
+ * `font-display` token — CSS consumes it as
+ * `var(--loupe-font-display, var(--loupe-font-sans))`, so themes without it
+ * simply keep the sans voice.
+ */
+export const EDITORIAL_TOKENS: TThemeTokens = {
+  "color-bg": "#faf9f7",
+  "color-surface": "#ffffff",
+  "color-fg": "#1c1b18",
+  "color-fg-muted": "#6d6a63",
+  "color-primary": "#2f55a4",
+  "color-primary-fg": "#ffffff",
+  "color-border": "#e3e0d8",
+  "color-ring": "#2f55a4",
+  "color-danger": "#a4262c",
+  "color-signal": "#1c1b18",
+  "color-signal-fg": "#faf9f7",
+  "radius-sm": "4px",
+  "radius-md": "8px",
+  "radius-lg": "12px",
+  "space-1": "0.25rem",
+  "space-2": "0.5rem",
+  "space-3": "0.75rem",
+  "space-4": "1rem",
+  "space-5": "1.5rem",
+  "space-6": "2.5rem",
+  "font-sans": "'Helvetica Neue', -apple-system, 'Segoe UI', system-ui, Arial, sans-serif",
+  "font-serif": "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif",
+  "font-display": "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif",
+  "font-mono": "ui-monospace, SFMono-Regular, Menlo, monospace",
+  "ease-out": "cubic-bezier(0.22, 1, 0.36, 1)",
+  "duration-slow": "5000ms",
+  "shadow-md": "0 10px 28px -20px rgba(28,27,24,0.28)",
+};
+
 /** Named theme presets shipped for quick, on-brand theming. */
 export const THEME_PRESETS = {
   nightAtlas: DEFAULT_TOKENS,
   neutral: NEUTRAL_TOKENS,
+  editorial: EDITORIAL_TOKENS,
 } as const;
 
 /** A safe kebab custom-property ident (nothing that could escape the var name). */

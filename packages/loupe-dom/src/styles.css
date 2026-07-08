@@ -1460,6 +1460,8 @@
   font-size: 0.82rem;
   line-height: 1.45;
   color: var(--loupe-color-fg-muted);
+  /* multi-line decision copy (e.g. full copy blocks) keeps its line breaks */
+  white-space: pre-wrap;
 }
 .loupe-decision__flags {
   display: flex;
@@ -1538,4 +1540,56 @@
   grid-column: 1 / -1;
   width: 100%;
   max-width: 640px;
+}
+
+/* ============================================================ *
+ * Editorial flow: task questions as headlines + collapsible prompts.
+ * When a group carries a `question`, the title demotes to a small-caps
+ * eyebrow and the question becomes the step's visual headline (set in the
+ * display voice when the theme provides `--loupe-font-display`). Long
+ * prompts can collapse behind a <details> summary so context never buries
+ * the options; the one-line lead stays visible.
+ * ============================================================ */
+.loupe-group__title--eyebrow,
+.loupe--flow .loupe-group__title--eyebrow {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--loupe-color-fg-muted);
+}
+.loupe-group__question {
+  font-family: var(--loupe-font-display, var(--loupe-font-sans));
+  font-size: 1.35rem;
+  font-weight: 650;
+  line-height: 1.22;
+  margin-top: 0.35rem;
+  color: var(--loupe-color-fg);
+}
+.loupe--flow .loupe-group__question {
+  font-size: clamp(1.35rem, 3.5vw, 1.65rem);
+}
+.loupe-group__lead {
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--loupe-color-fg);
+}
+.loupe-group__promptdetails {
+  margin-top: 0.55rem;
+}
+.loupe-group__promptsummary {
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--loupe-color-fg-muted);
+}
+.loupe-group__promptsummary:hover,
+.loupe-group__promptdetails[open] .loupe-group__promptsummary {
+  color: var(--loupe-color-fg);
+}
+.loupe-group__promptfull {
+  white-space: pre-wrap;
+  padding: 0.6rem 0 0.2rem;
 }

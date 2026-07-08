@@ -255,12 +255,28 @@ export function renderGroup(
   group: TGroup,
   sel: Selections,
   index: number,
+  view: RenderView = {},
 ): string {
   const num = String(index + 1).padStart(2, "0");
   const groupProps = conn.getGroupProps(group);
-  const prompt = group.prompt
-    ? `<div class="loupe-group__prompt">${escapeHtml(group.prompt)}</div>`
+  // The step's task question: group-level wins over the config-level default.
+  // When present it becomes the visual headline and the title demotes to an eyebrow.
+  const question = group.question ?? config.question;
+  const questionHtml = question
+    ? `<div class="loupe-group__question">${escapeHtml(question)}</div>`
     : "";
+  // Always-visible one-line lead above the prompt body.
+  const lead = group.promptLead
+    ? `<div class="loupe-group__lead">${escapeHtml(group.promptLead)}</div>`
+    : "";
+  let prompt = "";
+  if (group.prompt && group.promptCollapsible) {
+    // Progressive disclosure: full prompt collapses behind a summary toggle.
+    // `view.openPrompts` keeps a toggled-open state across re-renders.
+    prompt = `<div class="loupe-group__prompt loupe-group__prompt--collapsible">${lead}<details class="loupe-group__promptdetails" data-loupe-prompt-details="${escapeHtml(group.id)}"${view.openPrompts?.has(group.id) ? " open" : ""}><summary class="loupe-group__promptsummary">${escapeHtml(group.promptSummary ?? "Full context")}</summary><div class="loupe-group__promptfull">${escapeHtml(group.prompt)}</div></details></div>`;
+  } else if (group.prompt || group.promptLead) {
+    prompt = `<div class="loupe-group__prompt">${lead}${group.prompt ? `<div class="loupe-group__prompttext">${escapeHtml(group.prompt)}</div>` : ""}</div>`;
+  }
   const tiles = group.options.map((o) => renderTile(config, group, o, sel)).join("");
   const cleared = sel[group.id] === undefined && selectedWriteIn(group, sel) === "";
   const lockBadge = group.locked
@@ -270,7 +286,8 @@ export function renderGroup(
   <div class="loupe-group__head">
     <span class="loupe-group__n">${num}</span>
     <div class="loupe-group__titles">
-      <div class="loupe-group__title">${escapeHtml(group.title)}</div>
+      <div class="loupe-group__title${question ? " loupe-group__title--eyebrow" : ""}">${escapeHtml(group.title)}</div>
+      ${questionHtml}
       ${prompt}
     </div>
     ${lockBadge}
@@ -498,6 +515,11 @@ export function renderExportBrief(config: Config, sel: Selections): string {
 export interface RenderView {
   /** Active step index in flow mode (0..groups.length; the last is Review). */
   step?: number;
+  /**
+   * Ids of groups whose collapsible prompt is currently expanded — the mount
+   * tracks `<details>` toggles here so an opened prompt survives re-renders.
+   */
+  openPrompts?: ReadonlySet<string>;
 }
 
 /**
@@ -509,15 +531,15 @@ export interface RenderView {
 export function renderApp(config: Config, sel: Selections, view: RenderView = {}): string {
   const layout = config.layout ?? "flow";
   return layout === "page"
-    ? renderPageApp(config, sel)
-    : renderFlowApp(config, sel, view.step ?? 0);
+    ? renderPageApp(config, sel, view)
+    : renderFlowApp(config, sel, view.step ?? 0, view);
 }
 
 /** Dense single-scroll layout: all groups + sticky preview + export brief. */
-function renderPageApp(config: Config, sel: Selections): string {
+function renderPageApp(config: Config, sel: Selections, view: RenderView = {}): string {
   const title = escapeHtml(config.title ?? "Loupe decision lock");
   const groups = config.groups
-    .map((g, i) => renderGroup(config, g, sel, i))
+    .map((g, i) => renderGroup(config, g, sel, i, view))
     .join("\n");
   return `<div class="loupe" data-loupe-root>
   <header class="loupe-header">
@@ -541,7 +563,12 @@ ${groups}
 }
 
 /** Guided stepper: one decision per screen + a final review / hand-off step. */
-function renderFlowApp(config: Config, sel: Selections, rawStep: number): string {
+function renderFlowApp(
+  config: Config,
+  sel: Selections,
+  rawStep: number,
+  view: RenderView = {},
+): string {
   const title = escapeHtml(config.title ?? "Loupe decision lock");
   const groups = config.groups;
   const groupCount = groups.length;
@@ -563,7 +590,7 @@ function renderFlowApp(config: Config, sel: Selections, rawStep: number): string
   const renderStep = (inner: string, idx: number, active: boolean, extraClass = ""): string =>
     `<section class="loupe-step${extraClass}${active ? " is-active" : ""}" data-loupe-step="${idx}" aria-hidden="${active ? "false" : "true"}"${active ? "" : " inert"}>${inner}</section>`;
   const groupSteps = groups
-    .map((g, i) => renderStep(renderGroup(config, g, sel, i), i, i === step))
+    .map((g, i) => renderStep(renderGroup(config, g, sel, i, view), i, i === step))
     .join("\n");
   const reviewStep = renderStep(renderReview(config, sel), groupCount, onReview, " loupe-step--review");
 

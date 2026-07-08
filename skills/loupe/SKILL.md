@@ -34,6 +34,23 @@ being re-litigated; open groups still need 2–6 options. The export brief
 prefixes locked rows with `[LOCKED]`, lists each decision's `flags`, and marks
 `(differs from recommendation)` when a pick deviates.
 
+**Glanceability doctrine.** A decision screen must state its ask at a glimpse,
+never bury it under context. Set `question` (config-level default, per-group
+override) — it renders as the step's visual headline (`--loupe-font-display`,
+serif in the editorial preset) and the group title demotes to a small-caps
+eyebrow. Long context goes in `prompt` with `promptCollapsible: true` plus a
+one-line `promptLead` (the sentence that states the job, verbatim from the
+source brief) — the full prompt collapses behind a `promptSummary` toggle
+(default "Full context") and its open state survives re-renders. A `decision`
+specimen's `detail` preserves line breaks, so it can carry full multi-paragraph
+copy blocks.
+
+**Write-in doctrine.** The free-text write-in is the escape valve — commentary
+alongside a pick, or a deliberate skip-with-reason. It defaults ON; never set
+`allowWriteIn: false` for a founder-facing flow unless a protocol explicitly
+forbids free answers, and treat a write-in-only answer as a skip, never as a
+third option.
+
 Packages used: `@lucentive-labs/loupe-schema` (config + validation + JSON
 Schema), `@lucentive-labs/loupe-generator` (`generate()`), and Playwright for
 verification. The renderer lives in `@lucentive-labs/loupe-dom`; the React
@@ -94,9 +111,18 @@ Create `loupe.config.ts` exporting a `Config`. Copy the structure from
 
 - `assets`: `{ key: { src, width, height } }` — `src` is relative to the example
   root; `width`/`height` are the intrinsic pixels from step 1.
-- `theme`: brand tokens (optional; defaults ship in core).
-- `groups[]`: each `{ id, title, prompt?, options[] }` (2–6 options). One option
-  per group may set `recommended: true` (it becomes the default pick).
+- `theme`: brand tokens (optional; defaults ship in core). Presets:
+  `THEME_PRESETS.nightAtlas` (the dark default), `THEME_PRESETS.neutral`, and
+  `THEME_PRESETS.editorial` — a light "editor's desk" skin (paper ground, ink,
+  one editor-blue accent, serif `font-display`, system stacks only) that is the
+  right default for founder-facing text/decision flows where the content must
+  lead.
+- `question`: config-level task question rendered as each step's headline
+  (per-group `question` overrides it).
+- `groups[]`: each `{ id, title, question?, prompt?, promptLead?, promptCollapsible?, promptSummary?, options[] }`
+  (2–6 options). One option per group may set `recommended: true` (it becomes
+  the default pick). See "Strategic decision flows" for the question /
+  collapsible-prompt glanceability doctrine.
 - each option's `specimen` is one of:
   - `{ kind: "imageCrop", asset, crop: {x,y,w,h}, alt }`
   - `{ kind: "palette", colors: [...] }`
