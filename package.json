@@ -17,6 +17,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "prepare": "[ \"$(git rev-parse --show-toplevel 2>/dev/null)\" = \"$(pwd -P)\" ] && git config core.hooksPath scripts/githooks || true",
     "build": "pnpm -r build",
     "build:packages": "pnpm -r --filter \"./packages/*\" build",
     "typecheck": "pnpm -r --if-present typecheck",
