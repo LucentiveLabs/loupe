@@ -203,3 +203,40 @@ describe("validateConfig preview refs", () => {
     );
   });
 });
+
+describe("glanceability field edges", () => {
+  const twoOpts = [
+    { id: "x", label: "X", specimen: { kind: "palette" as const, colors: ["#fff"] } },
+    { id: "y", label: "Y", specimen: { kind: "palette" as const, colors: ["#000"] } },
+  ];
+  const base = (group: Record<string, unknown>) => ({
+    version: 1 as const,
+    assets: {},
+    groups: [{ id: "g", title: "G", options: twoOpts, ...group }],
+  });
+
+  it("rejects empty-string question / promptLead / promptSummary", () => {
+    expect(() => parseConfig(base({ question: "" }))).toThrow();
+    expect(() => parseConfig(base({ promptLead: "" }))).toThrow();
+    expect(() =>
+      parseConfig(base({ prompt: "ctx", promptCollapsible: true, promptSummary: "" })),
+    ).toThrow();
+    expect(() => parseConfig({ ...base({}), question: "" })).toThrow();
+  });
+
+  it("validateConfig mirrors the prompt-disclosure refinements", () => {
+    const good = parseConfig(base({ prompt: "ctx", promptCollapsible: true }));
+    // Simulate programmatic Config values that never went through parseConfig.
+    const noPrompt = structuredClone(good);
+    delete (noPrompt.groups[0] as Record<string, unknown>).prompt;
+    expect(validateConfig(noPrompt)).toContain(
+      'group "g" sets promptCollapsible without a prompt to collapse',
+    );
+    const summaryOnly = structuredClone(good);
+    delete (summaryOnly.groups[0] as Record<string, unknown>).promptCollapsible;
+    (summaryOnly.groups[0] as Record<string, unknown>).promptSummary = "Brief";
+    expect(validateConfig(summaryOnly)).toContain(
+      'group "g" sets promptSummary without promptCollapsible',
+    );
+  });
+});

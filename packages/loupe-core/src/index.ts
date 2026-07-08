@@ -509,8 +509,13 @@ export function tokensToCssText(tokens?: TThemeTokens, selector = ":root"): stri
   return `${selector} {\n${body}\n}`;
 }
 
-/** The recognized semantic theme-token keys (kebab, without the `--loupe-` prefix). */
-export const KNOWN_THEME_TOKENS: readonly string[] = Object.keys(DEFAULT_TOKENS);
+/** The recognized semantic theme-token keys (kebab, without the `--loupe-` prefix).
+ * `font-display` is optional (no entry in DEFAULT_TOKENS — CSS falls back to
+ * `font-sans`), but it is an official token, not a typo. */
+export const KNOWN_THEME_TOKENS: readonly string[] = [
+  ...Object.keys(DEFAULT_TOKENS),
+  "font-display",
+];
 
 /** Bounded edit distance, for "did you mean" suggestions on unknown tokens. */
 function editDistance(a: string, b: string): number {
@@ -584,7 +589,11 @@ export function connect(): Connect {
     getRootProps: () => ({ "data-loupe-scope": "root" }),
     getGroupProps: (group) => ({
       role: "radiogroup",
-      "aria-label": group.title,
+      // The question, when set, is the decision actually being asked — screen
+      // readers should hear it, with the title as the category suffix. The
+      // config-level question default is resolved by renderers (they hold the
+      // config); this covers the group-level field.
+      "aria-label": group.question ? `${group.question} (${group.title})` : group.title,
       "data-loupe-part": "group",
       "data-group": group.id,
     }),

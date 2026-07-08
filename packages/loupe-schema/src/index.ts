@@ -121,11 +121,11 @@ export const Group = z
      * headline and the title demotes to a small-caps eyebrow — the ask must
      * be findable at a glimpse, never buried in small muted text.
      */
-    question: z.string().optional(),
+    question: z.string().min(1).optional(),
     prompt: z.string().optional(),
     /** Always-visible one-line lead shown above the prompt (e.g. the one
      * sentence that states the job, extracted verbatim from a longer brief). */
-    promptLead: z.string().optional(),
+    promptLead: z.string().min(1).optional(),
     /**
      * Progressive disclosure: collapse the full `prompt` behind a summary
      * toggle so long context stops burying the options. The lead (and the
@@ -134,7 +134,7 @@ export const Group = z
      */
     promptCollapsible: z.boolean().optional(),
     /** Label for the collapsed-prompt toggle. Default: "Full context". */
-    promptSummary: z.string().optional(),
+    promptSummary: z.string().min(1).optional(),
     /**
      * A locked group renders read-only: its `recommended` option is the fixed
      * pick, tiles are inert, and the store refuses changes. Use for decisions
@@ -208,8 +208,8 @@ export const Config = z.object({
   title: z.string().optional(),
   /** Default task question for every group (see `Group.question`). A group's
    * own `question` overrides it. */
-  question: z.string().optional(),
-  /** Presentation: "flow" = guided one-question-at-a-time stepper (generator/DOM default); "page" = dense single scroll. The React `<Loupe>` adapter renders "page" (flow is generator/DOM-only for now). */
+  question: z.string().min(1).optional(),
+  /** Presentation: "flow" = guided one-question-at-a-time stepper (the default); "page" = dense single scroll. Both the generator/DOM renderer and the React `<Loupe>` adapter implement both layouts. */
   layout: z.enum(["flow", "page"]).optional(),
   assets: z.record(z.string(), Asset).default({}),
   theme: ThemeTokens.optional(),
@@ -253,6 +253,12 @@ export function validateConfig(cfg: Config): string[] {
       );
     if (g.locked && !g.options.some((o) => o.recommended))
       errs.push(`locked group "${g.id}" needs a recommended option to hold its fixed pick`);
+    // Mirror the schema's prompt-disclosure refinements for programmatic
+    // Config values that skip parseConfig.
+    if (g.promptCollapsible && !g.prompt)
+      errs.push(`group "${g.id}" sets promptCollapsible without a prompt to collapse`);
+    if (g.promptSummary && !g.promptCollapsible)
+      errs.push(`group "${g.id}" sets promptSummary without promptCollapsible`);
     if (g.locked && g.allowWriteIn === true)
       errs.push(`locked group "${g.id}" cannot allow a write-in (locked groups are decided context)`);
     const optIds = new Set<string>();

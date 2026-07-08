@@ -154,7 +154,7 @@ function firstFamily(stack?: string): string | undefined {
 function fontLinks(theme?: Config["theme"]): string {
   const tokens = { ...DEFAULT_TOKENS, ...(theme ?? {}) };
   const families: string[] = [];
-  for (const key of ["font-sans", "font-serif", "font-mono"] as const) {
+  for (const key of ["font-sans", "font-serif", "font-mono", "font-display"] as const) {
     const fam = firstFamily(tokens[key]);
     if (!fam || SYSTEM_FONT_FAMILIES.has(fam.toLowerCase())) continue;
     if (!families.includes(fam)) families.push(fam);

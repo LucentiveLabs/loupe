@@ -16,6 +16,7 @@ import {
   selectedWriteIn,
   resolveKeydown,
   tokensToCssVars,
+  validateThemeTokens,
   escapeHtml,
   safeUrl,
   writeInKey,
@@ -281,6 +282,9 @@ describe("theming + security", () => {
       expect(UNSAFE_TOKEN_VALUE.test(v), `token ${k} value must be safe`).toBe(false);
       expect(UNSAFE_TOKEN_FUNC.test(v), `token ${k} value must not call unsafe CSS functions`).toBe(false);
     }
+    // The library's own preset must pass the library's own theme lint —
+    // font-display is an official optional token, not a typo.
+    expect(validateThemeTokens(EDITORIAL_TOKENS)).toEqual([]);
   });
   it("escapeHtml + safeUrl block injection", () => {
     expect(escapeHtml('<img src=x onerror="alert(1)">')).not.toContain("<img");

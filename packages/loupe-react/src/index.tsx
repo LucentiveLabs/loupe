@@ -537,6 +537,11 @@ function Group({
   // The step's task question: group-level wins over the config-level default.
   // When present it becomes the visual headline and the title demotes to an eyebrow.
   const question = group.question ?? config.question;
+  // getGroupProps only sees the group; when the question comes from the
+  // config-level default, surface it to screen readers here.
+  if (question && !group.question) {
+    groupProps["aria-label"] = `${question} (${group.title})`;
+  }
   const lead = group.promptLead ? (
     <div className="loupe-group__lead">{group.promptLead}</div>
   ) : null;
