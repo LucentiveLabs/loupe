@@ -534,6 +534,36 @@ function Group({
   const num = String(index + 1).padStart(2, "0");
   const groupProps = normalizeProps(conn.getGroupProps(group));
   const cleared = sel[group.id] === undefined && selectedWriteIn(group, sel) === "";
+  // The step's task question: group-level wins over the config-level default.
+  // When present it becomes the visual headline and the title demotes to an eyebrow.
+  const question = group.question ?? config.question;
+  // getGroupProps only sees the group; when the question comes from the
+  // config-level default, surface it to screen readers here.
+  if (question && !group.question) {
+    groupProps["aria-label"] = `${question} (${group.title})`;
+  }
+  const lead = group.promptLead ? (
+    <div className="loupe-group__lead">{group.promptLead}</div>
+  ) : null;
+  // React reconciles (no innerHTML rebuild), so an uncontrolled <details>
+  // keeps its open state across re-renders natively — no tracking needed.
+  const prompt =
+    group.prompt && group.promptCollapsible ? (
+      <div className="loupe-group__prompt loupe-group__prompt--collapsible">
+        {lead}
+        <details className="loupe-group__promptdetails" data-loupe-prompt-details={group.id}>
+          <summary className="loupe-group__promptsummary">
+            {group.promptSummary ?? "Full context"}
+          </summary>
+          <div className="loupe-group__promptfull">{group.prompt}</div>
+        </details>
+      </div>
+    ) : group.prompt || group.promptLead ? (
+      <div className="loupe-group__prompt">
+        {lead}
+        {group.prompt ? <div className="loupe-group__prompttext">{group.prompt}</div> : null}
+      </div>
+    ) : null;
   return (
     <section
       className={group.locked ? "loupe-group loupe-group--locked" : "loupe-group"}
@@ -543,10 +573,11 @@ function Group({
       <div className="loupe-group__head">
         <span className="loupe-group__n">{num}</span>
         <div className="loupe-group__titles">
-          <div className="loupe-group__title">{group.title}</div>
-          {group.prompt ? (
-            <div className="loupe-group__prompt">{group.prompt}</div>
-          ) : null}
+          <div className={question ? "loupe-group__title loupe-group__title--eyebrow" : "loupe-group__title"}>
+            {group.title}
+          </div>
+          {question ? <div className="loupe-group__question">{question}</div> : null}
+          {prompt}
         </div>
         {group.locked ? (
           <span className="loupe-group__lock" title="Decision locked">

@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseConfig, validateConfig } from "../../loupe-schema/src/index";
 import {
+  DEFAULT_TOKENS,
+  EDITORIAL_TOKENS,
+  THEME_PRESETS,
+  UNSAFE_TOKEN_FUNC,
+  UNSAFE_TOKEN_VALUE,
   cropToCss,
   createLoupeStore,
   groupAllowsWriteIn,
@@ -11,6 +16,7 @@ import {
   selectedWriteIn,
   resolveKeydown,
   tokensToCssVars,
+  validateThemeTokens,
   escapeHtml,
   safeUrl,
   writeInKey,
@@ -264,6 +270,21 @@ describe("theming + security", () => {
     const vars = tokensToCssVars({ "color-primary": "#123456" });
     expect(vars["--loupe-color-primary"]).toBe("#123456");
     expect(vars["--loupe-color-bg"]).toBeDefined();
+  });
+  it("EDITORIAL preset is registered and matches the token contract", () => {
+    expect(THEME_PRESETS.editorial).toBe(EDITORIAL_TOKENS);
+    // Same keys as the default contract, plus the new optional display voice.
+    const expected = new Set([...Object.keys(DEFAULT_TOKENS), "font-display"]);
+    expect(new Set(Object.keys(EDITORIAL_TOKENS))).toEqual(expected);
+    // Every value must survive the tokensToCssText safety guards — an unsafe
+    // preset value would silently fall back to the Night Atlas default.
+    for (const [k, v] of Object.entries(EDITORIAL_TOKENS)) {
+      expect(UNSAFE_TOKEN_VALUE.test(v), `token ${k} value must be safe`).toBe(false);
+      expect(UNSAFE_TOKEN_FUNC.test(v), `token ${k} value must not call unsafe CSS functions`).toBe(false);
+    }
+    // The library's own preset must pass the library's own theme lint —
+    // font-display is an official optional token, not a typo.
+    expect(validateThemeTokens(EDITORIAL_TOKENS)).toEqual([]);
   });
   it("escapeHtml + safeUrl block injection", () => {
     expect(escapeHtml('<img src=x onerror="alert(1)">')).not.toContain("<img");

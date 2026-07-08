@@ -54,7 +54,15 @@ export const config: Config = {
     {
       id: "color",
       title: "Color system",
-      prompt: "Which palette carries the brand?",
+      // The step's headline question: the title demotes to a small-caps
+      // eyebrow and this becomes the visual ask.
+      question: "Which palette carries the brand?",
+      // Long context collapses behind a "Full context" toggle; the one-line
+      // lead stays visible so the ask is never buried.
+      promptLead: "Pick the palette every Northwind surface will carry.",
+      prompt:
+        "Northwind sells premium field equipment to people who read the spec sheet before the story. The palette has to work on packaging, a dense product-configurator UI, and long-form journal posts — the same four colors everywhere. Warmth signals craft; restraint signals engineering. Whatever you pick here locks the accent used for every call-to-action downstream.",
+      promptCollapsible: true,
       options: [
         {
           id: "amberInk",
@@ -80,6 +88,7 @@ export const config: Config = {
     {
       id: "headline",
       title: "Headline voice",
+      question: "Which type voice?",
       prompt: "What does the type say before the words do?",
       options: [
         {

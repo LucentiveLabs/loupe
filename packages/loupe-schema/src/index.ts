@@ -78,12 +78,15 @@ const SpecimenLayout = z.object({
 /**
  * Text-first specimen for strategic / non-visual decision flows (org
  * structures, naming calls, go/no-go gates). `summary` is the statement the
- * tile leads with; `detail` is one supporting line; `flags` are short badge
+ * tile leads with; `detail` is supporting prose (line breaks are preserved,
+ * so it can carry multi-line copy); `flags` are short badge
  * chips (e.g. "COUNSEL", "public copy", "reversible").
  */
 const SpecimenDecision = z.object({
   kind: z.literal("decision"),
   summary: z.string().min(1),
+  /** Supporting text under the summary. Line breaks are preserved, so this can
+   * carry multi-paragraph prose (e.g. a full copy block in a copy pick). */
   detail: z.string().optional(),
   flags: z.array(z.string().min(1).max(40)).max(6).optional(),
 });
@@ -112,7 +115,26 @@ export const Group = z
   .object({
     id: z.string().min(1),
     title: z.string().min(1),
+    /**
+     * The step's task question ("Which copy is stronger?"). When set (or
+     * inherited from `Config.question`), it renders as the step's visual
+     * headline and the title demotes to a small-caps eyebrow — the ask must
+     * be findable at a glimpse, never buried in small muted text.
+     */
+    question: z.string().min(1).optional(),
     prompt: z.string().optional(),
+    /** Always-visible one-line lead shown above the prompt (e.g. the one
+     * sentence that states the job, extracted verbatim from a longer brief). */
+    promptLead: z.string().min(1).optional(),
+    /**
+     * Progressive disclosure: collapse the full `prompt` behind a summary
+     * toggle so long context stops burying the options. The lead (and the
+     * question) stay visible; the full prompt is one click away. Requires
+     * `prompt`.
+     */
+    promptCollapsible: z.boolean().optional(),
+    /** Label for the collapsed-prompt toggle. Default: "Full context". */
+    promptSummary: z.string().min(1).optional(),
     /**
      * A locked group renders read-only: its `recommended` option is the fixed
      * pick, tiles are inert, and the store refuses changes. Use for decisions
@@ -146,6 +168,16 @@ export const Group = z
         code: "custom",
         message: `locked group "${g.id}" cannot allow a write-in (locked groups are decided context)`,
       });
+    if (g.promptCollapsible && !g.prompt)
+      ctx.addIssue({
+        code: "custom",
+        message: `group "${g.id}" sets promptCollapsible without a prompt to collapse`,
+      });
+    if (g.promptSummary && !g.promptCollapsible)
+      ctx.addIssue({
+        code: "custom",
+        message: `group "${g.id}" sets promptSummary without promptCollapsible`,
+      });
   });
 export type TGroup = z.infer<typeof Group>;
 
@@ -174,7 +206,10 @@ export type TThemeTokens = z.infer<typeof ThemeTokens>;
 export const Config = z.object({
   version: z.literal(1),
   title: z.string().optional(),
-  /** Presentation: "flow" = guided one-question-at-a-time stepper (generator/DOM default); "page" = dense single scroll. The React `<Loupe>` adapter renders "page" (flow is generator/DOM-only for now). */
+  /** Default task question for every group (see `Group.question`). A group's
+   * own `question` overrides it. */
+  question: z.string().min(1).optional(),
+  /** Presentation: "flow" = guided one-question-at-a-time stepper (the default); "page" = dense single scroll. Both the generator/DOM renderer and the React `<Loupe>` adapter implement both layouts. */
   layout: z.enum(["flow", "page"]).optional(),
   assets: z.record(z.string(), Asset).default({}),
   theme: ThemeTokens.optional(),
@@ -218,6 +253,12 @@ export function validateConfig(cfg: Config): string[] {
       );
     if (g.locked && !g.options.some((o) => o.recommended))
       errs.push(`locked group "${g.id}" needs a recommended option to hold its fixed pick`);
+    // Mirror the schema's prompt-disclosure refinements for programmatic
+    // Config values that skip parseConfig.
+    if (g.promptCollapsible && !g.prompt)
+      errs.push(`group "${g.id}" sets promptCollapsible without a prompt to collapse`);
+    if (g.promptSummary && !g.promptCollapsible)
+      errs.push(`group "${g.id}" sets promptSummary without promptCollapsible`);
     if (g.locked && g.allowWriteIn === true)
       errs.push(`locked group "${g.id}" cannot allow a write-in (locked groups are decided context)`);
     const optIds = new Set<string>();

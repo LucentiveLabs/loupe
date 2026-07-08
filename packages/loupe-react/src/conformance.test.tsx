@@ -28,7 +28,11 @@ const cfg = parseConfig({
     {
       id: "color",
       title: "Color",
+      question: "Which palette carries the brand?",
       prompt: "Pick a palette",
+      promptLead: "The one-line job.",
+      promptCollapsible: true,
+      promptSummary: "Why this matters",
       options: [
         { id: "warm", label: "Warm", recommended: true, specimen: { kind: "palette", colors: ["#fff", "#000"] } },
         { id: "cool", label: "Cool", caption: "icy", specimen: { kind: "palette", colors: ["#0ff"], over: "wide" } },
@@ -288,6 +292,34 @@ describe("loupe-react ⇄ loupe-dom flow-layout parity", () => {
     ]) {
       expect(domFlow).toContain(marker);
       expect(reactFlow).toContain(marker);
+    }
+  });
+});
+
+describe("glanceability parity (question / lead / collapsible prompt)", () => {
+  const classCount = (html: string, cls: string): number =>
+    html.split(cls).length - 1;
+
+  it("both renderers emit the question headline + eyebrow title", () => {
+    for (const html of [domHtml, reactHtml]) {
+      expect(classCount(html, "loupe-group__question")).toBe(1);
+      expect(classCount(html, "loupe-group__title--eyebrow")).toBe(1);
+      expect(html).toContain("Which palette carries the brand?");
+    }
+  });
+
+  it("both renderers emit the lead + collapsible details with the custom summary", () => {
+    for (const html of [domHtml, reactHtml]) {
+      expect(classCount(html, "loupe-group__lead")).toBe(1);
+      expect(attrValues(html, "data-loupe-prompt-details")).toEqual(["color"]);
+      expect(html).toContain("Why this matters");
+      expect(html).toContain("The one-line job.");
+    }
+  });
+
+  it("both renderers voice the question to the radiogroup label", () => {
+    for (const html of [domHtml, reactHtml]) {
+      expect(attrValues(html, "aria-label")).toContain("Which palette carries the brand? (Color)");
     }
   });
 });

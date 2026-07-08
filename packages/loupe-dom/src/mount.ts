@@ -82,6 +82,8 @@ export function mount(
   const timers = new Set<number>();
   // Flow-layout step index (ignored by page layout); survives store re-renders.
   let step = 0;
+  // Group ids whose collapsible prompt is expanded; survives store re-renders.
+  const openPrompts = new Set<string>();
   const stepCount = config.groups.length + 1; // groups + review
   // While a write-in input is being typed, skip the full innerHTML re-render
   // (which destroys + rebuilds the input and flickers the screen). We patch
@@ -100,7 +102,7 @@ export function mount(
     const focusWriteIn = active?.getAttribute("data-loupe-writein");
     const caret = focusWriteIn ? (active as HTMLInputElement).selectionStart : null;
 
-    el.innerHTML = renderApp(config, sel, { step });
+    el.innerHTML = renderApp(config, sel, { step, openPrompts });
 
     // Restore focus onto the equivalent tile (roving tabindex already set by render).
     if (focusGroup && focusOption) {
@@ -332,9 +334,22 @@ export function mount(
     focusTarget?.focus();
   };
 
+  // Track collapsible-prompt <details> open state so it survives re-renders.
+  // No re-render here — the browser already shows/hides the content; we only
+  // record the state for the NEXT render.
+  const onToggle = (ev: Event) => {
+    const target = ev.target as HTMLElement | null;
+    const g = target?.getAttribute?.("data-loupe-prompt-details");
+    if (!g) return;
+    if ((target as HTMLDetailsElement).open) openPrompts.add(g);
+    else openPrompts.delete(g);
+  };
+
   el.addEventListener("click", onClick);
   el.addEventListener("keydown", onKeydown);
   el.addEventListener("input", onInput);
+  // `toggle` does not bubble; listen in the capture phase to observe it here.
+  el.addEventListener("toggle", onToggle, true);
 
   const unsubscribe = store.subscribe(render);
   render();
@@ -346,6 +361,7 @@ export function mount(
       el.removeEventListener("click", onClick);
       el.removeEventListener("keydown", onKeydown);
       el.removeEventListener("input", onInput);
+      el.removeEventListener("toggle", onToggle, true);
       for (const t of timers) window.clearTimeout(t);
       timers.clear();
       el.innerHTML = "";
