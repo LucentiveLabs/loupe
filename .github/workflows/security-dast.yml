@@ -1,9 +1,10 @@
-# Scheduled PASSIVE DAST of the live domain where Loupe is published
-# (needs scripts/security-dast.sh present). Passive-only: response
-# security-header + TLS checks (curl/openssl, always available on the runner).
-# nuclei's safe templates run too when the binary is present locally; CI stays
-# header/TLS to avoid an unpinned installer. Active fuzzing (ZAP) belongs on
-# staging, not this job.
+# synced-from: security-gate skill v1.0.0
+# Scheduled PASSIVE DAST of the live domains (C5 pen test). Drop into a host repo
+# as .github/workflows/security-dast.yml (needs scripts/security-dast.sh present).
+# Passive-only per the pen-test-scope decision: response security-header + TLS
+# checks (curl/openssl, always available on the runner). nuclei's safe templates
+# run too when the binary is present locally; CI stays header/TLS to avoid an
+# unpinned installer. Active fuzzing (ZAP) belongs on staging, not this job.
 name: security-dast
 
 on:
