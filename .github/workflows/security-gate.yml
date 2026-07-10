@@ -1,9 +1,11 @@
-# Standing security gate — .github/workflows/security-gate.yml
+# synced-from: security-gate skill v1.0.0
+# Reusable security gate — drop into each repo as .github/workflows/security-gate.yml
 #
-# Runs on every PR. v1 policy: SECRETS BLOCK (gitleaks, full git history);
-# dependency CVEs (osv-scanner) and SAST (semgrep) REPORT into the job
-# summary but do not fail the PR yet. Flip the final step to `--fail-on high`
-# once the deps/SAST report backlog is triaged.
+# Runs on every PR. v1 policy: SECRETS BLOCK (gitleaks, working tree + full
+# history); dependency CVEs (osv-scanner) and SAST (semgrep) REPORT into the job
+# summary but do not fail the PR yet. Flip `--fail-on high` once the audit
+# backlog is triaged (see skills/security-gate/SKILL.md). Deterministic, non-LLM
+# → permitted in GitHub Actions by the harness contract.
 #
 # Actions are pinned by commit SHA (not tag). Scanner versions are pinned below;
 # bump them deliberately. Kept intentionally cheap so it is never disabled for
@@ -14,7 +16,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    # Weekly recurring scan — Mon 06:00 UTC. Catches newly-disclosed
+    # Weekly recurring scan (C5) — Mon 06:00 UTC. Catches newly-disclosed
     # dependency CVEs and any secret that slipped in between PRs.
     - cron: "0 6 * * 1"
 
