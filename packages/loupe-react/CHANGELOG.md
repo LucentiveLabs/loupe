@@ -1,5 +1,13 @@
 # @lucentive-labs/loupe-react
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [438adf4]
+  - @lucentive-labs/loupe-schema@0.2.0
+  - @lucentive-labs/loupe-core@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@lucentive-labs/loupe-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Loupe headless core — zero runtime deps: SSR-safe store, deterministic derivations, crop math, and ARIA prop-getters.",
   "type": "module",
   "license": "MIT",
