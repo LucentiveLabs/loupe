@@ -1,6 +1,6 @@
 {
   "name": "@lucentive-labs/loupe-schema",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Loupe config schema (Zod) — decision-lock contract + JSON Schema + semantic validator.",
   "type": "module",
   "license": "MIT",

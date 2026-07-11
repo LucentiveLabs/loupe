@@ -1,6 +1,6 @@
 {
   "name": "@lucentive-labs/loupe-react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Loupe React 19 adapter — <Loupe/> + useLoupe(), a thin useSyncExternalStore view over loupe-core. SSR/hydration-safe.",
   "type": "module",
   "license": "MIT",

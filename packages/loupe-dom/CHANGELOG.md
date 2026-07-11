@@ -1,5 +1,29 @@
 # @lucentive-labs/loupe-dom
 
+## 0.2.0
+
+### Minor Changes
+
+- 438adf4: Glanceable decision flows + editorial theme preset.
+
+  - `question` (config-level default, per-group override): renders as the step's
+    visual headline via the new optional `font-display` token; the group title
+    demotes to a small-caps eyebrow.
+  - Progressive disclosure for long context: `promptLead` (always-visible lead
+    line) + `promptCollapsible` (full prompt behind a `promptSummary` toggle,
+    default "Full context"); open state survives re-renders.
+  - `THEME_PRESETS.editorial`: light "editor's desk" preset — paper ground, ink,
+    a single editor-blue accent, serif `font-display`, system font stacks only,
+    content-forward for text/decision flows.
+  - Decision specimens: `detail` now preserves line breaks, so tiles can carry
+    full multi-paragraph copy blocks.
+
+### Patch Changes
+
+- Updated dependencies [438adf4]
+  - @lucentive-labs/loupe-schema@0.2.0
+  - @lucentive-labs/loupe-core@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes
