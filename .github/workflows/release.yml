@@ -53,8 +53,29 @@ jobs:
 
       # npm Trusted Publishing (OIDC) + provenance require npm >= 11.5.1, newer
       # than the npm bundled with Node 22. Upgrade it before the publish step.
+      # PINNED (not @latest): an unpinned upgrade shipped a broken sigstore
+      # dependency tree (MODULE_NOT_FOUND at publish), so the release lane
+      # inherits upstream breakage silently. Bump deliberately.
       - name: Upgrade npm (Trusted Publishing needs >= 11.5.1)
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.6.2
+
+      # `pnpm install` runs the repo's `prepare` script, which points
+      # core.hooksPath at scripts/githooks — so the pre-commit gitleaks gate
+      # also fires on the changesets/action "Version Packages" bot commit.
+      # The gate fails CLOSED when gitleaks is missing, so install it (pinned +
+      # checksum-verified, mirroring security-gate.yml) before any commit.
+      - name: Install gitleaks (pre-commit hook fails closed without it)
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP" # keep downloads out of the workspace (bot commit does `git add .`)
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl -fsSL -o gitleaks.tgz "${base}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o gitleaks_checksums.txt "${base}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          awk -v n="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" '$2==n{print $1"  gitleaks.tgz"}' gitleaks_checksums.txt | sha256sum -c -
+          tar -xzf gitleaks.tgz -C /usr/local/bin gitleaks
+          gitleaks version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
