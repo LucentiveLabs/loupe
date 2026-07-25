@@ -67,22 +67,22 @@ is a thin renderer. Take only the layer you need — they all read the same conf
 | Package | What it is |
 | --- | --- |
 | [`@lucentive-labs/loupe-schema`](./packages/loupe-schema) | The Zod config contract + JSON Schema emitter + semantic validator. |
-| [`@lucentive-labs/loupe-core`](./packages/loupe-core) | Zero-dependency headless core — SSR-safe store, deterministic derivations, crop math, ARIA prop-getters. |
+| [`@lucentive-labs/loupe-core`](./packages/loupe-core) | Framework-free headless core — SSR-safe store, deterministic derivations, crop math, ARIA prop-getters. |
 | [`@lucentive-labs/loupe-dom`](./packages/loupe-dom) | The canonical vanilla browser renderer — `mount()`, `renderToString()`, and `styles.css`. |
 | [`@lucentive-labs/loupe-react`](./packages/loupe-react) | The React 19 adapter — `<Loupe />` and `useLoupe()`. |
 | [`@lucentive-labs/loupe-generator`](./packages/loupe-generator) | Node-only `generate()` — bundles a self-contained, deterministic `index.html`. |
 
 ## Install & use
 
-> **Publishing status:** the `@lucentive-labs/loupe-*` packages are being published to npm
-> shortly. Until then, clone this repo and run the generator from the workspace — the
-> portable-artifact path below works today with no publish.
-
 There are two ways to consume Loupe. **Default to the portable artifact.**
 
-**1. Portable artifact (no published packages).** From a clone of this workspace, author a
-`loupe.config.ts`, run the generator, and take the self-contained `index.html`. Drop it in a
-PR, a bucket, or a teammate's machine.
+**1. Portable artifact.** Install the published build-time packages, author a
+`loupe.config.ts`, run the generator, and take the self-contained `index.html`.
+Drop it in a PR, a bucket, or a teammate's machine.
+
+```sh
+pnpm add -D @lucentive-labs/loupe-generator @lucentive-labs/loupe-schema
+```
 
 ```ts
 // generate.ts — Node, build-time
@@ -93,8 +93,8 @@ const { htmlPath } = await generate(config, { outDir: "out/decision-lock" });
 console.log(`Artifact: ${htmlPath}`);
 ```
 
-**2. Live React component** *(once the packages are published)*. When a shipping app needs
-the picker live in its own UI, mount the React adapter and import the styles once.
+**2. Live React component.** When a shipping app needs the picker live in its
+own UI, mount the React adapter and import the styles once.
 
 ```sh
 pnpm add @lucentive-labs/loupe-react @lucentive-labs/loupe-dom @lucentive-labs/loupe-schema

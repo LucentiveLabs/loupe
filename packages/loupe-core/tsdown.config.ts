@@ -6,7 +6,7 @@ export default defineConfig({
   fixedExtension: false,
   dts: true,
   clean: true,
-  // The schema is a separate workspace package (type-only import here); never
-  // inline it. loupe-core itself has zero runtime dependencies.
+  // Keep the companion schema package external so consumers receive the
+  // published runtime dependency instead of a bundled duplicate.
   external: ["@lucentive-labs/loupe-schema"],
 });

@@ -6,6 +6,6 @@ change, plus a human-readable summary for the changelog.
 
 - Add one with `pnpm changeset` (or author a markdown file by hand).
 - Versions and changelogs are applied by `pnpm changeset version`.
-- Publishing is wired in `.github/workflows/release.yml` and is **gated off**
-  until the repository and the `@lucentive-labs/*` packages are public and an
-  npm trusted-publisher is configured (see the spec, §0.10).
+- Publishing is wired in `.github/workflows/release.yml` through npm Trusted
+  Publishing with provenance. A pending changeset produces a Version Packages
+  PR; merging that PR publishes the resulting versions.

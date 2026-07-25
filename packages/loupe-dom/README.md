@@ -7,8 +7,6 @@ The canonical **Loupe** browser renderer with zero framework dependencies:
 
 ## Install
 
-> Publishing to npm shortly. Until then, use Loupe from a clone of the workspace: <https://github.com/LucentiveLabs/loupe>
-
 ```sh
 pnpm add @lucentive-labs/loupe-dom
 ```
@@ -29,7 +27,7 @@ Server-side, `renderToString(config, selections)` returns markup you can hydrate
 ## Sibling packages
 
 - [`@lucentive-labs/loupe-schema`](../loupe-schema) — the Zod config contract + JSON Schema.
-- [`@lucentive-labs/loupe-core`](../loupe-core) — zero-dependency headless core (store, derivations, crop math).
+- [`@lucentive-labs/loupe-core`](../loupe-core) — framework-free headless core (store, derivations, crop math).
 - [`@lucentive-labs/loupe-react`](../loupe-react) — React 19 adapter (`<Loupe />`, `useLoupe()`).
 - [`@lucentive-labs/loupe-generator`](../loupe-generator) — Node-only self-contained artifact builder.
 
