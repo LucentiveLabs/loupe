@@ -28,6 +28,9 @@
     "release": "pnpm build:packages && changeset publish"
   },
   "pnpm": {
+    "overrides": {
+      "postcss": "8.5.23"
+    },
     "onlyBuiltDependencies": [
       "esbuild"
     ]

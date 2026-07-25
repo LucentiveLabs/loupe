@@ -32,7 +32,7 @@
 
   - `loupe-schema`: Zod config schema, inferred types, JSON Schema export, and a
     semantic validator (the contract a human or AI agent fills).
-  - `loupe-core`: zero-dependency headless core — SSR-safe store, deterministic
+  - `loupe-core`: framework-free headless core — SSR-safe store, deterministic
     composed-preview / export-brief derivations, exact crop math, theming
     (`tokensToCssVars`), and ARIA prop-getters for the radiogroup pattern.
   - `loupe-dom`: vanilla browser renderer — `mount`, `renderToString`, the crop

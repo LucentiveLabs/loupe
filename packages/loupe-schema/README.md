@@ -7,8 +7,6 @@ visual-design decision.
 
 ## Install
 
-> Publishing to npm shortly. Until then, use Loupe from a clone of the workspace: <https://github.com/LucentiveLabs/loupe>
-
 ```sh
 pnpm add @lucentive-labs/loupe-schema
 ```
@@ -34,7 +32,7 @@ ids, missing asset references, dangling preview bands).
 
 ## Sibling packages
 
-- [`@lucentive-labs/loupe-core`](../loupe-core) — zero-dependency headless core (store, derivations, crop math).
+- [`@lucentive-labs/loupe-core`](../loupe-core) — framework-free headless core (store, derivations, crop math).
 - [`@lucentive-labs/loupe-dom`](../loupe-dom) — vanilla browser renderer + `styles.css`.
 - [`@lucentive-labs/loupe-react`](../loupe-react) — React 19 adapter (`<Loupe />`, `useLoupe()`).
 - [`@lucentive-labs/loupe-generator`](../loupe-generator) — Node-only self-contained artifact builder.

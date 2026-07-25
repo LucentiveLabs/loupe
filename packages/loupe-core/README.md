@@ -1,13 +1,12 @@
 # @lucentive-labs/loupe-core
 
-The **Loupe** headless core — zero runtime dependencies. An SSR-safe selection
-store, deterministic composed-preview and export-brief derivations, exact crop
-math, theming (`tokensToCssVars`), and ARIA prop-getters. Every Loupe renderer
-(`loupe-dom`, `loupe-react`) is a thin view over this.
+The **Loupe** framework-free headless core. An SSR-safe selection store,
+deterministic composed-preview and export-brief derivations, exact crop math,
+theming (`tokensToCssVars`), and ARIA prop-getters. Every Loupe renderer
+(`loupe-dom`, `loupe-react`) is a thin view over this. Its runtime contract uses
+the companion [`@lucentive-labs/loupe-schema`](../loupe-schema) package.
 
 ## Install
-
-> Publishing to npm shortly. Until then, use Loupe from a clone of the workspace: <https://github.com/LucentiveLabs/loupe>
 
 ```sh
 pnpm add @lucentive-labs/loupe-core
