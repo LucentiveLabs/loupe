@@ -1,5 +1,11 @@
 # @lucentive-labs/loupe-schema
 
+## 0.2.1
+
+### Patch Changes
+
+- a6075de: Correct the published package READMEs and core metadata to reflect current npm availability and the core package's schema dependency.
+
 ## 0.2.0
 
 ### Minor Changes
