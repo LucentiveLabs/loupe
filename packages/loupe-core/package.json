@@ -1,6 +1,6 @@
 {
   "name": "@lucentive-labs/loupe-core",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Loupe framework-free headless core — SSR-safe store, deterministic derivations, crop math, and ARIA prop-getters.",
   "type": "module",
   "license": "MIT",
