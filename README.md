@@ -32,6 +32,9 @@ person or an agent.
 typed config  →  rendered option tiles  →  lock picks  →  deterministic export brief
 ```
 
+Product promise, shipped boundary, and depth roadmap:
+[`PRODUCT.md`](https://github.com/LucentiveLabs/loupe/blob/main/PRODUCT.md).
+
 ## The name
 
 A loupe is the small lens a jeweler or a printer holds to a stone or a proof — you bring the
