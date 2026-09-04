@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { parseFrontmatter, themeFromDesign } from "./design-theme";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { parseFrontmatter, themeFromDesign, themeFromDesignDir } from "./design-theme";
 
 describe("parseFrontmatter", () => {
   it("parses nested maps and scalar values", () => {
@@ -95,5 +98,36 @@ colors:
 
     expect(theme).toEqual({});
     expect(warnings).toContain("no DESIGN.md or design.json provided; theme is empty (all defaults)");
+  });
+});
+
+describe("themeFromDesignDir", () => {
+  const dirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores poisoned design.json and still resolves DESIGN.md", () => {
+    const dir = mkdtempSync(join(tmpdir(), "loupe-theme-"));
+    dirs.push(dir);
+    writeFileSync(
+      join(dir, "DESIGN.md"),
+      `---
+colors:
+  background: "#f7f5f0"
+---
+`,
+      "utf8",
+    );
+    mkdirSync(join(dir, ".impeccable"), { recursive: true });
+    writeFileSync(join(dir, ".impeccable", "design.json"), "{not json", "utf8");
+
+    const { theme, warnings } = themeFromDesignDir(dir);
+
+    expect(theme["color-bg"]).toBe("#f7f5f0");
+    expect(warnings[0]).toMatch(/could not parse/);
   });
 });
