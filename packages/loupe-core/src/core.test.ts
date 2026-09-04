@@ -20,6 +20,7 @@ import {
   escapeHtml,
   safeUrl,
   writeInKey,
+  localStorageAdapter,
 } from "./index";
 
 const cfg = parseConfig({
@@ -329,5 +330,51 @@ describe("semantic validation", () => {
       ],
     });
     expect(validateConfig(c)).toContain('option "g.x" references missing asset "missing"');
+  });
+});
+
+describe("localStorageAdapter", () => {
+  const memory = new Map<string, string>();
+  const fake: Storage = {
+    get length() {
+      return memory.size;
+    },
+    clear() {
+      memory.clear();
+    },
+    getItem(key: string) {
+      return memory.get(key) ?? null;
+    },
+    key() {
+      return null;
+    },
+    removeItem(key: string) {
+      memory.delete(key);
+    },
+    setItem(key: string, value: string) {
+      memory.set(key, value);
+    },
+  };
+
+  it("returns null on missing key and malformed JSON", () => {
+    vi.stubGlobal("localStorage", fake);
+    memory.clear();
+    const adapter = localStorageAdapter("loupe.test");
+    expect(adapter.get()).toBeNull();
+    memory.set("loupe.test", "{not json");
+    expect(adapter.get()).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it("does not throw when setItem fails", () => {
+    vi.stubGlobal("localStorage", {
+      ...fake,
+      setItem() {
+        throw new Error("quota");
+      },
+    });
+    const adapter = localStorageAdapter("loupe.test");
+    expect(() => adapter.set({ g: "x" })).not.toThrow();
+    vi.unstubAllGlobals();
   });
 });
