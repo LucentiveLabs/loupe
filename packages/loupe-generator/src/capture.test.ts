@@ -1,3 +1,4 @@
+import { request as httpRequest } from "node:http";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,17 +7,39 @@ import { serveCapture, type CaptureServer } from "./capture";
 
 const MAX_BODY_BYTES = 5_000_000;
 
-async function post(
+function post(
   url: string,
-  body: string | Buffer,
+  body: string | Uint8Array,
   contentType = "application/json",
 ): Promise<{ status: number; text: string }> {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": contentType },
-    body,
+  const parsed = new URL(url);
+  const payload = typeof body === "string" ? Buffer.from(body) : Buffer.from(body);
+  return new Promise((resolve, reject) => {
+    const req = httpRequest(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port,
+        path: parsed.pathname,
+        method: "POST",
+        headers: {
+          "content-type": contentType,
+          "content-length": payload.byteLength,
+        },
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            text: Buffer.concat(chunks).toString("utf8"),
+          });
+        });
+      },
+    );
+    req.on("error", reject);
+    req.end(payload);
   });
-  return { status: res.status, text: await res.text() };
 }
 
 describe("serveCapture", () => {
@@ -79,7 +102,7 @@ describe("serveCapture", () => {
   it("rejects an oversized body with 413", async () => {
     const s = await start();
     const lockUrl = `${s.url.replace(/\/$/, "")}/__loupe/lock`;
-    const result = await post(lockUrl, Buffer.alloc(MAX_BODY_BYTES + 1, 0x61));
+    const result = await post(lockUrl, new Uint8Array(MAX_BODY_BYTES + 1).fill(0x61));
     expect(result.status).toBe(413);
     expect(result.text).toMatch(/brief too large/);
   });
