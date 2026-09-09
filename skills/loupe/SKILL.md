@@ -72,7 +72,7 @@ pnpm -C examples/<your-surface> tsx generate.ts   # → dist/index.html (portabl
 
 This skill drives that flow end to end (explore → author → generate → verify →
 export brief). Only embedding the **live React component** inside another app's
-build needs the packages on a registry, and that is pending a registry decision.
+build needs the published React packages; use the package install path below.
 
 The portable artifact needs no registry at all. Install the published packages
 (`@lucentive-labs/loupe-*`) only when you want the live React component inside a
@@ -190,11 +190,16 @@ Run it:
 pnpm verify            # → screenshots/desktop.png + screenshots/mobile.png (or: tsx verify.mjs)
 ```
 
-**Iterate the crop rects:** open the screenshots. If a crop lands on the wrong
-detail or shows letterboxing, adjust that option's `{x,y,w,h}` in
-`loupe.config.ts` and re-run `pnpm verify`. Repeat until every tile frames its
-intended subject. (The crop math fills the tile at any aspect ratio given
-correct intrinsic dims — letterboxing means the dims or the rect are wrong.)
+**Iterate the crop rects, up to three corrective passes:** open the screenshots
+after each `pnpm verify`. If a crop lands on the wrong detail or shows
+letterboxing, adjust that option's `{x,y,w,h}` in `loupe.config.ts` and rerun
+the verification. Crop corrections may change framing only; preserve the
+founder-selected tile. If any tile still fails after the third pass, stop with
+`retry-exhausted`: preserve the latest screenshots and `loupe.config.ts`, list
+each unresolved tile and observed issue in the handoff, and return the artifact
+for founder review. Do not continue automatically. (The crop math fills the
+tile at any aspect ratio given correct intrinsic dims — letterboxing means the
+dims or the rect are wrong.)
 
 ### 5. Hand off the brief
 
