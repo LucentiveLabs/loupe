@@ -2,7 +2,7 @@
   "name": "loupe-monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "Loupe — open-source, config-driven, agent-native decision-lock. Monorepo root.",
+  "description": "Loupe \u2014 open-source, config-driven, agent-native decision-lock. Monorepo root.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://labs.lucentive.io/libraries/loupe",
@@ -21,7 +21,7 @@
     "build": "pnpm -r build",
     "build:packages": "pnpm -r --filter \"./packages/*\" build",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test",
+    "test": "node --test scripts/check-braces-bounded.mjs && pnpm -r --if-present test",
     "lint:publish": "pnpm build:packages && node scripts/check-publish.mjs",
     "changeset": "changeset",
     "version": "changeset version",
@@ -32,7 +32,8 @@
       "postcss": "8.5.23",
       "js-yaml@>=3.0.0 <4.0.0": "3.15.2",
       "js-yaml@>=4.0.0 <5.0.0": "4.3.2",
-      "nanoid@>=3.0.0 <4.0.0": "3.3.18"
+      "nanoid@>=3.0.0 <4.0.0": "3.3.18",
+      "braces": "file:./vendor/braces-bounded"
     },
     "onlyBuiltDependencies": [
       "esbuild"
